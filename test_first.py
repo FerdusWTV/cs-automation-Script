@@ -344,12 +344,22 @@ def _upload_content(driver, wait, config, type_key):
 
 
 
-def _configure_layout_and_go_back(driver, wait):
+def _configure_layout_and_go_back(driver, wait, type_key=None):
     """Configure webcast layout settings then click Back to return to Sessions."""
     layout_btn = wait.until(EC.presence_of_element_located(
         (By.XPATH, "(//button[normalize-space()='Webcast Layout'])[1]")
     ))
     driver.execute_script("arguments[0].click();", layout_btn)
+
+    # AxE webcast type requires enabling the first toggle switch on the layout page.
+    if type_key == "AxE":
+        axe_switch = wait.until(EC.presence_of_element_located(
+            (By.XPATH, "(//button[@role='switch'])[1]")
+        ))
+        driver.execute_script("arguments[0].scrollIntoView(true);", axe_switch)
+        time.sleep(1)
+        driver.execute_script("arguments[0].click();", axe_switch)
+        print("  Clicked AxE layout switch (//button[@role='switch'])[1].")
 
     # Title
     preview_title = wait.until(EC.presence_of_element_located((By.XPATH, "//input[@placeholder='Title']")))
@@ -532,7 +542,7 @@ def test_03_create_all_webcasts(driver, config):
         _activate_and_manage_webcast(driver, wait, title)
         _set_webcast_type(driver, wait, type_label)
         _upload_content(driver, wait, config, type_key)
-        _configure_layout_and_go_back(driver, wait)
+        _configure_layout_and_go_back(driver, wait, type_key)
 
         print(f"  🎉 Webcast {i}/{len(webcasts)} '{title}' fully done!\n")
 
