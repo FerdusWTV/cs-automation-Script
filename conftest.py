@@ -35,6 +35,8 @@ def config(request):
             "web": os.getenv("WEB", ""),
             "slide_path": os.getenv("SLIDE_PATH"),
             "video_path": os.getenv("VIDEO_PATH"),
+            "headshot_path": os.getenv("HEADSHOT_PATH"),
+            "audio_path": os.getenv("AUDIO_PATH"),
             "webcast_titles": [
                 os.getenv("NEW_WEBCAST_TITLE_1", "Automated Webcast VxS - 001"),
                 os.getenv("NEW_WEBCAST_TITLE_2", "Automated Webcast AxS - 002"),
@@ -62,6 +64,8 @@ def config(request):
         "web": os.getenv("WEB", ""),
         "slide_path": os.getenv("SLIDE_PATH"),
         "video_path": os.getenv("VIDEO_PATH"),
+        "headshot_path": os.getenv("HEADSHOT_PATH"),
+        "audio_path": os.getenv("AUDIO_PATH"),
         "webcast_titles": [
             os.getenv("NEW_WEBCAST_TITLE_1", "Automated Webcast VxS - 001"),
             os.getenv("NEW_WEBCAST_TITLE_2", "Automated Webcast AxS - 002"),

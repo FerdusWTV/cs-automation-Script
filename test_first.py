@@ -18,7 +18,7 @@ def driver():
     """Setup and teardown of Chrome WebDriver."""
     load_dotenv()
     options = Options()
-    options.add_argument("--headless=new")
+    # options.add_argument("--headless=new")
     options.add_argument("--window-size=1920,1080")
     options.add_argument("--disable-gpu")
     options.add_argument("--no-sandbox")
@@ -202,20 +202,83 @@ def _activate_and_manage_webcast(driver, wait, title):
 
 SLIDE_INPUT_XPATH = "//input[@type='file' and contains(@accept,'pdf')]"
 VIDEO_INPUT_XPATH = "//input[@type='file' and contains(@accept,'video')]"
-HEADSHOT_INPUT_XPATH = "//input[@type='file' and @accept='image/jpeg,image/png']"
-AUDIO_INPUT_XPATH = "//input[@type='file' and @accept='audio/x-m4a,audio/m4a']"
+HEADSHOT_INPUT_XPATH = "//input[@type='file' and contains(@accept,'image')]"
+AUDIO_INPUT_XPATH = "//input[@type='file' and contains(@accept,'audio')]"
 SAVE_BTN_XPATH = "(//button[normalize-space()='Save'])[1]"
 
 
-def _upload_content_VxS(driver, wait, config):
-    """Upload slide (Preview + Live) and video (Preview).
+def _set_webcast_type(driver, wait, type_label):
+    """On the Manage page, open 'Webcast details' and set the webcast type.
 
-    The dropzone file inputs are targeted by their `accept` attribute, and the
-    actual upload happens when Save is clicked (the video save can take well
-    over 30s in prod — server-side processing — hence the long timeouts).
+    `#webcastType` is an antd Select (combobox) — typing into it and saving does
+    NOT commit a value (antd discards unconfirmed search text). The type must be
+    picked from the dropdown: click the selector to open it, then click the
+    option whose `title` matches the label exactly. Changing the type is what
+    controls which file inputs the Content page exposes, so this must stick.
     """
+    details_btn = wait.until(EC.presence_of_element_located(
+        (By.XPATH, "(//button[normalize-space()='Webcast details'])[1]")
+    ))
+    driver.execute_script("arguments[0].click();", details_btn)
+    time.sleep(1)
 
-    # --- Open Content panel ---
+    # Open the Select (native click — antd opens the listbox on mousedown).
+    selector = wait.until(EC.presence_of_element_located(
+        (By.XPATH, "//input[@id='webcastType']/ancestor::div[contains(@class,'ant-select-selector')][1]")
+    ))
+    driver.execute_script("arguments[0].scrollIntoView({block:'center'});", selector)
+    time.sleep(0.5)
+    selector.click()
+    time.sleep(1)
+
+    # Pick the option by its exact title (the env label must match a real option).
+    option = wait.until(EC.element_to_be_clickable(
+        (By.XPATH, f"//div[contains(@class,'ant-select-item-option')][@title='{type_label}']")
+    ))
+    driver.execute_script("arguments[0].click();", option)
+    time.sleep(1)
+
+    selected = driver.find_element(
+        By.XPATH, "//span[contains(@class,'ant-select-selection-item')]"
+    ).get_attribute("title")
+    if selected != type_label:
+        pytest.fail(f"Webcast type not selected: wanted '{type_label}', selector shows '{selected}'.")
+
+    save_btn = wait.until(EC.presence_of_element_located((By.XPATH, SAVE_BTN_XPATH)))
+    driver.execute_script("arguments[0].click();", save_btn)
+    _wait_for_swal(driver, "webcast_type_save", timeout=60, expect="success")
+    print(f"  ✅ Webcast type set to '{type_label}'.")
+    time.sleep(2)
+
+
+# Each content file's input locator, the config key holding its path, how long to
+# let the dropzone settle after attaching, and how long Save may take server-side.
+_FILE_INPUT = {
+    "slide":    SLIDE_INPUT_XPATH,
+    "video":    VIDEO_INPUT_XPATH,
+    "headshot": HEADSHOT_INPUT_XPATH,
+    "audio":    AUDIO_INPUT_XPATH,
+}
+_FILE_PATH_KEY = {
+    "slide": "slide_path", "video": "video_path",
+    "headshot": "headshot_path", "audio": "audio_path",
+}
+_FILE_SETTLE = {"slide": 5, "video": 3, "headshot": 2, "audio": 3}
+_FILE_SAVE_TIMEOUT = {"slide": 60, "video": 180, "headshot": 60, "audio": 180}
+
+# Per webcast type: the ordered (state, file) uploads. Slides go to both Preview
+# and Live; the primary media (video/audio) + headshot are Preview-only.
+CONTENT_SPECS = {
+    "VxS": [("preview", "slide"), ("live", "slide"), ("preview", "video")],
+    "AxS": [("preview", "slide"), ("preview", "headshot"), ("preview", "audio"), ("live", "slide")],
+    "V":   [("preview", "video")],
+    "A":   [("preview", "headshot"), ("preview", "audio")],
+    "AxE": [("preview", "headshot"), ("preview", "audio")],
+}
+
+
+def _open_content_panel(driver, wait):
+    """Open the Content panel (must be re-opened after each status switch)."""
     time.sleep(1)
     content_btn = wait.until(
         EC.presence_of_element_located((By.XPATH, "(//button[normalize-space()='Content'])[1]"))
@@ -223,122 +286,61 @@ def _upload_content_VxS(driver, wait, config):
     driver.execute_script("arguments[0].click();", content_btn)
     time.sleep(2)
 
-    # --- PREVIEW: Upload Slide ---
-    slide_upload = wait.until(EC.presence_of_element_located((By.XPATH, SLIDE_INPUT_XPATH)))
-    slide_upload.send_keys(config["slide_path"])
-    time.sleep(5)  # let the dropzone finish reading/rendering the PDF before saving
 
-    preview_save_btn = wait.until(EC.presence_of_element_located((By.XPATH, SAVE_BTN_XPATH)))
-    driver.execute_script("arguments[0].click();", preview_save_btn)
-    _wait_for_swal(driver, "preview_slide_save", timeout=60, expect="success")
-    print(f"  ✅ Preview slide saved.")
-    time.sleep(2)
+def _switch_status(driver, wait, from_state, to_state):
+    """Switch the Preview/Live status dropdown.
 
-    # --- Switch to LIVE ---
-    status_dropdown = wait.until(EC.presence_of_element_located((By.XPATH, "//span[@title='Preview']")))
-    driver.execute_script("arguments[0].scrollIntoView({block:'center'});", status_dropdown)
-    time.sleep(0.5)
-    status_dropdown.click()
-    status_live = wait.until(EC.presence_of_element_located((By.XPATH, "//div[contains(text(),'Live')]")))
-    driver.execute_script("arguments[0].click();", status_live)
-
-    # --- LIVE: Upload Slide ---
-    time.sleep(1)
-    content_btn = wait.until(
-        EC.presence_of_element_located((By.XPATH, "(//button[normalize-space()='Content'])[1]"))
-    )
-    driver.execute_script("arguments[0].click();", content_btn)
-    time.sleep(2)
-
-    slide_upload = wait.until(EC.presence_of_element_located((By.XPATH, SLIDE_INPUT_XPATH)))
-    slide_upload.send_keys(config["slide_path"])
-    time.sleep(5)
-
-    live_save_btn = wait.until(EC.presence_of_element_located((By.XPATH, SAVE_BTN_XPATH)))
-    driver.execute_script("arguments[0].click();", live_save_btn)
-    _wait_for_swal(driver, "live_slide_save", timeout=60, expect="success")
-    print(f"  ✅ Live slide saved.")
-    time.sleep(2)
-
-    # --- Switch back to PREVIEW ---
-    status_dropdown = wait.until(EC.presence_of_element_located((By.XPATH, "//span[@title='Live']")))
-    driver.execute_script("arguments[0].scrollIntoView({block:'center'});", status_dropdown)
-    time.sleep(0.5)
-    status_dropdown.click()
-    status_preview = wait.until(EC.presence_of_element_located((By.XPATH, "//div[contains(text(),'Preview')]")))
-    driver.execute_script("arguments[0].click();", status_preview)
-
-    # --- PREVIEW: Upload Video ---
-    time.sleep(1)
-    video_upload = wait.until(EC.presence_of_element_located((By.XPATH, VIDEO_INPUT_XPATH)))
-    video_upload.send_keys(config["video_path"])
-    time.sleep(3)  # file just gets attached here; the real upload happens on Save
-
-    preview_save_btn = wait.until(EC.presence_of_element_located((By.XPATH, SAVE_BTN_XPATH)))
-    driver.execute_script("arguments[0].click();", preview_save_btn)
-    _wait_for_swal(driver, "preview_video_save", timeout=180, expect="success")
-    print(f"  ✅ Preview video saved.")
-    time.sleep(2)
-
-
-def _upload_content_AxS(driver, wait, config):
+    The dropdown is an antd Select — it opens on the native mousedown (a JS
+    .click() won't open it), but the option in the menu needs a JS click since
+    a toast can intercept the native one.
     """
-    Upload only Slide (Preview + Live) — no Video.
-    AxS = Audio, Slides & headshots.
+    src, dst = from_state.capitalize(), to_state.capitalize()
+    dropdown = wait.until(EC.presence_of_element_located((By.XPATH, f"//span[@title='{src}']")))
+    driver.execute_script("arguments[0].scrollIntoView({block:'center'});", dropdown)
+    time.sleep(0.5)
+    dropdown.click()
+    option = wait.until(EC.presence_of_element_located((By.XPATH, f"//div[contains(text(),'{dst}')]")))
+    driver.execute_script("arguments[0].click();", option)
+    time.sleep(1)
+
+
+def _upload_one(driver, wait, config, file_key):
+    """Attach a single file to its dropzone and commit it with its own Save."""
+    path = config.get(_FILE_PATH_KEY[file_key])
+    if not path:
+        pytest.fail(f"No path configured for '{file_key}' — check .env / conftest config.")
+
+    file_input = wait.until(EC.presence_of_element_located((By.XPATH, _FILE_INPUT[file_key])))
+    file_input.send_keys(path)
+    time.sleep(_FILE_SETTLE[file_key])  # let the dropzone read the file before saving
+
+    save_btn = wait.until(EC.presence_of_element_located((By.XPATH, SAVE_BTN_XPATH)))
+    driver.execute_script("arguments[0].click();", save_btn)
+    _wait_for_swal(driver, f"{file_key}_save", timeout=_FILE_SAVE_TIMEOUT[file_key], expect="success")
+    print(f"  ✅ {file_key} saved.")
+    time.sleep(2)
+
+
+def _upload_content(driver, wait, config, type_key):
+    """Upload the content set required by `type_key` per CONTENT_SPECS.
+
+    The dropzone file inputs are targeted by their `accept` attribute, and each
+    file is committed by its own Save (audio/video saves can take well over 30s
+    in prod due to server-side processing — hence the long per-file timeouts).
     """
+    spec = CONTENT_SPECS[type_key]
+    current_state = "preview"  # webcasts open in Preview by default
+    panel_open = False
 
-    # --- Open Content panel ---
-    time.sleep(1)
-    content_btn = wait.until(
-        EC.presence_of_element_located((By.XPATH, "(//button[normalize-space()='Content'])[1]"))
-    )
-    driver.execute_script("arguments[0].click();", content_btn)
-    time.sleep(2)
-
-    # --- PREVIEW: Upload Slide ---
-    slide_upload = wait.until(EC.presence_of_element_located((By.XPATH, SLIDE_INPUT_XPATH)))
-    slide_upload.send_keys(config["slide_path"])
-    time.sleep(5)
-
-    preview_save_btn = wait.until(EC.presence_of_element_located((By.XPATH, SAVE_BTN_XPATH)))
-    driver.execute_script("arguments[0].click();", preview_save_btn)
-    _wait_for_swal(driver, "preview_slide_save", timeout=60, expect="success")
-    print(f"  ✅ Preview slide saved.")
-    time.sleep(2)
-
-    # --- Switch to LIVE ---
-    status_dropdown = wait.until(EC.presence_of_element_located((By.XPATH, "//span[@title='Preview']")))
-    driver.execute_script("arguments[0].scrollIntoView({block:'center'});", status_dropdown)
-    time.sleep(0.5)
-    status_dropdown.click()
-    status_live = wait.until(EC.presence_of_element_located((By.XPATH, "//div[contains(text(),'Live')]")))
-    driver.execute_script("arguments[0].click();", status_live)
-
-    # --- LIVE: Upload Slide ---
-    time.sleep(1)
-    content_btn = wait.until(
-        EC.presence_of_element_located((By.XPATH, "(//button[normalize-space()='Content'])[1]"))
-    )
-    driver.execute_script("arguments[0].click();", content_btn)
-    time.sleep(2)
-
-    slide_upload = wait.until(EC.presence_of_element_located((By.XPATH, SLIDE_INPUT_XPATH)))
-    slide_upload.send_keys(config["slide_path"])
-    time.sleep(5)
-
-    live_save_btn = wait.until(EC.presence_of_element_located((By.XPATH, SAVE_BTN_XPATH)))
-    driver.execute_script("arguments[0].click();", live_save_btn)
-    _wait_for_swal(driver, "live_slide_save", timeout=60, expect="success")
-    print(f"  ✅ Live slide saved.")
-    time.sleep(2)
-
-    # --- Switch back to PREVIEW ---
-    status_dropdown = wait.until(EC.presence_of_element_located((By.XPATH, "//span[@title='Live']")))
-    driver.execute_script("arguments[0].scrollIntoView({block:'center'});", status_dropdown)
-    time.sleep(0.5)
-    status_dropdown.click()
-    status_preview = wait.until(EC.presence_of_element_located((By.XPATH, "//div[contains(text(),'Preview')]")))
-    driver.execute_script("arguments[0].click();", status_preview)
+    for state, file_key in spec:
+        if state != current_state:
+            _switch_status(driver, wait, current_state, state)
+            current_state = state
+            panel_open = False  # status switch closes/re-renders the panel
+        if not panel_open:
+            _open_content_panel(driver, wait)
+            panel_open = True
+        _upload_one(driver, wait, config, file_key)
 
 
 
@@ -509,20 +511,29 @@ def test_02_open_target_portal(driver, config):
 
 
 def test_03_create_all_webcasts(driver, config):
-    """Create, activate, upload content, and configure layout for all 4 webcasts."""
+    """Create, activate, set type, upload the type's content, and configure layout."""
     wait = WebDriverWait(driver, 30)
-    titles = config["webcast_titles"]
 
-    for i, title in enumerate(titles, start=1):
+    # (title, webcast-type label to pick in 'Webcast details', content spec key)
+    webcasts = [
+        (config["webcast_titles"][0], config["webcast_type_1"], "VxS"),
+        (config["webcast_titles"][1], config["webcast_type_2"], "AxS"),
+        (config["webcast_titles"][2], config["webcast_type_3"], "V"),
+        (config["webcast_titles"][3], config["webcast_type_4"], "A"),
+        (config["webcast_titles"][4], config["webcast_type_5"], "AxE"),
+    ]
+
+    for i, (title, type_label, type_key) in enumerate(webcasts, start=1):
         print(f"\n{'='*60}")
-        print(f"  WEBCAST {i}/{len(titles)}: '{title}'")
+        print(f"  WEBCAST {i}/{len(webcasts)}: '{title}'  [{type_key}: {type_label}]")
         print(f"{'='*60}")
 
         _navigate_and_create_webcast(driver, wait, title)
         _activate_and_manage_webcast(driver, wait, title)
-        _upload_content(driver, wait, config)
+        _set_webcast_type(driver, wait, type_label)
+        _upload_content(driver, wait, config, type_key)
         _configure_layout_and_go_back(driver, wait)
 
-        print(f"  🎉 Webcast {i}/{len(titles)} '{title}' fully done!\n")
+        print(f"  🎉 Webcast {i}/{len(webcasts)} '{title}' fully done!\n")
 
     print("✅ All webcasts created and configured successfully!")
