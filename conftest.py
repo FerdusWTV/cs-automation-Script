@@ -13,6 +13,16 @@ def pytest_addoption(parser):
         default="dev",
         help="Environment to run tests against: dev or prod",
     )
+    parser.addoption(
+        "--webcast-type",
+        action="store",
+        default=None,
+        choices=["VxS", "AxS", "V", "A", "AxE"],
+        help=(
+            "Create only a single webcast of this type instead of all five. "
+            "One of: VxS, AxS, V, A, AxE. Omit to create the full set."
+        ),
+    )
 
 
 # ----------------------- ENV ------------------------
@@ -20,6 +30,7 @@ def pytest_addoption(parser):
 def config(request):
     load_dotenv()
     selected_env = request.config.getoption("--env")
+    single_webcast_type = request.config.getoption("--webcast-type")
 
     if selected_env == "prod":
         return {
@@ -49,6 +60,7 @@ def config(request):
             "webcast_type_3": os.getenv("WEBCAST_TYPE_V", "Video only"),
             "webcast_type_4": os.getenv("WEBCAST_TYPE_A", "Audio only"),
             "webcast_type_5": os.getenv("WEBCAST_TYPE_AxE", "Audio only"),
+            "single_webcast_type": single_webcast_type,
         }
 
     return {
@@ -78,6 +90,7 @@ def config(request):
         "webcast_type_3": os.getenv("WEBCAST_TYPE_V", "Video only"),
         "webcast_type_4": os.getenv("WEBCAST_TYPE_A", "Audio only"),
         "webcast_type_5": os.getenv("WEBCAST_TYPE_AxE", "Audio only"),
+        "single_webcast_type": single_webcast_type,
     }
 
 
@@ -99,11 +112,15 @@ def pytest_configure(config):
 # -----------------------------
 # Add Selenium version to HTML report summary
 # -----------------------------
+# `optionalhook=True` lets these register even when pytest-html isn't installed;
+# without it pluggy raises PluginValidationError ("unknown hook") at collection.
+@pytest.hookimpl(optionalhook=True)
 def pytest_html_results_summary(prefix, summary, postfix):
     prefix.extend([f"Selenium Version: {selenium.__version__}"])
 
 # -----------------------------
 # Optional: Customize HTML report title
 # -----------------------------
+@pytest.hookimpl(optionalhook=True)
 def pytest_html_report_title(report):
     report.title = "Automation Test Report"

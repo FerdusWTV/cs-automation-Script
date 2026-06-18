@@ -11,6 +11,16 @@ pytest -v --env=dev  --html=report.html --self-contained-html
 ```
 venv\Scripts\pytest -v --html=report.html --self-contained-html
 ```
+
+# Create only a single webcast
+
+By default `test_03_create_all_webcasts` creates all five webcast types. To create
+just one webcast of a selectable type, pass `--webcast-type` with one of:
+`VxS`, `AxS`, `V`, `A`, `AxE`.
+
+```
+pytest -v --env=dev --webcast-type=V --html=report.html --self-contained-html
+```
 ---
 ---
 

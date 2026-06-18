@@ -533,6 +533,14 @@ def test_03_create_all_webcasts(driver, config):
         (config["webcast_titles"][4], config["webcast_type_5"], "AxE"),
     ]
 
+    # --webcast-type=<KEY> restricts the run to a single webcast of that type.
+    single = config.get("single_webcast_type")
+    if single:
+        webcasts = [w for w in webcasts if w[2] == single]
+        if not webcasts:
+            pytest.fail(f"No webcast defined for type '{single}' — choose one of: VxS, AxS, V, A, AxE.")
+        print(f"\nSingle-webcast mode: creating only the '{single}' webcast.")
+
     for i, (title, type_label, type_key) in enumerate(webcasts, start=1):
         print(f"\n{'='*60}")
         print(f"  WEBCAST {i}/{len(webcasts)}: '{title}'  [{type_key}: {type_label}]")
