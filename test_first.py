@@ -273,7 +273,7 @@ CONTENT_SPECS = {
     "AxS": [("preview", "slide"), ("preview", "headshot"), ("preview", "audio"), ("live", "slide")],
     "V":   [("preview", "video")],
     "A":   [("preview", "headshot"), ("preview", "audio")],
-    "AxE": [("preview", "headshot"), ("preview", "audio")],
+    "AxE": [("preview", "slide"), ("preview", "headshot"), ("preview", "audio"), ("live", "slide")],
 }
 
 
