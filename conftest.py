@@ -40,7 +40,7 @@ def config(request):
             "url_org": os.getenv("URL_ORG_PROD") or os.getenv("URL_PROD"),
             "email_org": os.getenv("EMAIL_ORG_PROD") or os.getenv("EMAIL_PROD"),
             "password_org": os.getenv("PASSWORD_ORG_PROD") or os.getenv("PASSWORD_PROD"),
-            "target_portal": os.getenv("TARGET_PORTAL"),
+            "target_portal": os.getenv("TARGET_PORTAL_PROD") or os.getenv("TARGET_PORTAL"),
             "new_webcast_title": os.getenv("NEW_WEBCAST_TITLE"),
             "webcast_title": os.getenv("WEBCAST_TITLE"),
             "web": os.getenv("WEB", ""),

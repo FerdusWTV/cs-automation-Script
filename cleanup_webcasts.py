@@ -39,7 +39,7 @@ try:
 
     wait = WebDriverWait(driver, 30)
     sb = wait.until(EC.presence_of_element_located((By.XPATH, "//input[@placeholder='Search portal']")))
-    sb.send_keys(os.getenv("target_portal", "General Information"))
+    sb.send_keys(os.getenv("TARGET_PORTAL_PROD") or os.getenv("TARGET_PORTAL", "General Information"))
     eb = wait.until(EC.presence_of_element_located((By.XPATH, "//button[normalize-space()='Edit']")))
     driver.execute_script("arguments[0].click();", eb)
     wait.until(EC.presence_of_element_located((By.XPATH, "(//p[@class='branding-information-text mt-1'])[1]")))
