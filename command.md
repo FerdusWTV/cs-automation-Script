@@ -22,7 +22,7 @@ All commands are for **Windows PowerShell** and assume the repo root is
 deactivate
 
 # (First-time setup only) install dependencies into the venv
-.\venv\Scripts\python -m pip install selenium pytest pytest-html python-dotenv
+.\venv\Scripts\python -m pip install -r requirements.txt
 ```
 
 > If you activate the venv first, you can just call `pytest` / `python` directly.

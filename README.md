@@ -98,7 +98,8 @@ If `HEADSHOT_PATHS` is unset, the suite falls back to the single `HEADSHOT_PATH`
 - **Access to the ConnectStudio admin app** (dev and/or prod credentials).
 - **Local test asset files** — a PDF, an MP4, some JPGs, an M4A (see [§7](#7-test-assets)).
 
-Python packages: `selenium`, `pytest`, `pytest-html`, `python-dotenv`.
+Python packages: `selenium`, `pytest`, `pytest-html`, `python-dotenv` — pinned in
+`requirements.txt` at the repo root.
 
 ---
 
@@ -114,8 +115,8 @@ python -m venv venv
 # 2. Activate it
 .\venv\Scripts\Activate.ps1
 
-# 3. Install the dependencies
-python -m pip install selenium pytest pytest-html python-dotenv
+# 3. Install the dependencies (requirements.txt is at the repo root)
+python -m pip install -r requirements.txt
 
 # 4. Move into the test folder and create your .env from the template
 cd PyTestBasics
