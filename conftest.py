@@ -14,6 +14,15 @@ def pytest_addoption(parser):
         help="Environment to run tests against: dev or prod",
     )
     parser.addoption(
+        "--base-url",
+        action="store",
+        default=None,
+        help=(
+            "Override the admin URL the tests hit (e.g. http://localhost:3000 for a "
+            "locally-running app). Omit to use the URL for --env."
+        ),
+    )
+    parser.addoption(
         "--webcast-type",
         action="store",
         default=None,
@@ -30,6 +39,12 @@ def pytest_addoption(parser):
 def config(request):
     load_dotenv()
     selected_env = request.config.getoption("--env")
+    # Audio / Audio & slides webcasts take several headshots. HEADSHOT_PATHS is a
+    # comma-separated list; it falls back to the single HEADSHOT_PATH.
+    headshot_paths = [
+        p.strip() for p in (os.getenv("HEADSHOT_PATHS") or os.getenv("HEADSHOT_PATH") or "").split(",")
+        if p.strip()
+    ]
     single_webcast_type = request.config.getoption("--webcast-type")
 
     if selected_env == "prod":
@@ -47,6 +62,7 @@ def config(request):
             "slide_path": os.getenv("SLIDE_PATH"),
             "video_path": os.getenv("VIDEO_PATH"),
             "headshot_path": os.getenv("HEADSHOT_PATH"),
+            "headshot_paths": headshot_paths,
             "audio_path": os.getenv("AUDIO_PATH"),
             "webcast_titles": [
                 os.getenv("NEW_WEBCAST_TITLE_1", "Automated Webcast VxS - 001"),
@@ -77,6 +93,7 @@ def config(request):
         "slide_path": os.getenv("SLIDE_PATH"),
         "video_path": os.getenv("VIDEO_PATH"),
         "headshot_path": os.getenv("HEADSHOT_PATH"),
+        "headshot_paths": headshot_paths,
         "audio_path": os.getenv("AUDIO_PATH"),
         "webcast_titles": [
             os.getenv("NEW_WEBCAST_TITLE_1", "Automated Webcast VxS - 001"),

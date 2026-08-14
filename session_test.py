@@ -263,7 +263,11 @@ _FILE_PATH_KEY = {
     "slide": "slide_path", "video": "video_path",
     "headshot": "headshot_path", "audio": "audio_path",
 }
-_FILE_SETTLE = {"slide": 5, "video": 3, "headshot": 2, "audio": 3}
+# File keys that can take a list of paths (multi-file dropzones).
+_FILE_PATHS_KEY = {
+    "headshot": "headshot_paths",
+}
+_FILE_SETTLE = {"slide": 5, "video": 3, "headshot": 4, "audio": 3}
 _FILE_SAVE_TIMEOUT = {"slide": 60, "video": 180, "headshot": 60, "audio": 180}
 
 # Per webcast type: the ordered (state, file) uploads. Slides go to both Preview
@@ -305,13 +309,29 @@ def _switch_status(driver, wait, from_state, to_state):
 
 
 def _upload_one(driver, wait, config, file_key):
-    """Attach a single file to its dropzone and commit it with its own Save."""
-    path = config.get(_FILE_PATH_KEY[file_key])
-    if not path:
+    """Attach a file (or files) to its dropzone and commit with its own Save.
+
+    Headshots accept several images at once (Audio / Audio & Slide types show a
+    multi-image dropzone), so `headshot_paths` may hold more than one path. A
+    `multiple` input takes them in a single newline-joined send_keys; otherwise
+    they're attached one at a time and the dropzone appends each.
+    """
+    paths = config.get(_FILE_PATHS_KEY.get(file_key, "")) or []
+    if not paths:
+        single = config.get(_FILE_PATH_KEY[file_key])
+        paths = [single] if single else []
+    if not paths:
         pytest.fail(f"No path configured for '{file_key}' — check .env / conftest config.")
 
     file_input = wait.until(EC.presence_of_element_located((By.XPATH, _FILE_INPUT[file_key])))
-    file_input.send_keys(path)
+    if len(paths) > 1 and file_input.get_attribute("multiple"):
+        file_input.send_keys("\n".join(paths))
+    else:
+        for p in paths:
+            file_input.send_keys(p)
+            time.sleep(1)
+    if len(paths) > 1:
+        print(f"  📎 Attached {len(paths)} {file_key} files.")
     time.sleep(_FILE_SETTLE[file_key])  # let the dropzone read the file before saving
 
     save_btn = wait.until(EC.presence_of_element_located((By.XPATH, SAVE_BTN_XPATH)))

@@ -1,5 +1,8 @@
 # ConnectStudio E2E Suite — Commands
 
+> Quick command cheat-sheet. For setup, `.env` reference, troubleshooting, and how the
+> suite actually works, see **[README.md](README.md)**.
+
 All commands are for **Windows PowerShell** and assume the repo root is
 `C:\Users\User\selenium_project`. The pytest commands must be run from
 `PyTestBasics/` (that's where `conftest.py`, which defines `--env`, lives).
@@ -19,7 +22,7 @@ All commands are for **Windows PowerShell** and assume the repo root is
 deactivate
 
 # (First-time setup only) install dependencies into the venv
-.\venv\Scripts\python -m pip install -r requirements.txt
+.\venv\Scripts\python -m pip install selenium pytest pytest-html python-dotenv
 ```
 
 > If you activate the venv first, you can just call `pytest` / `python` directly.
@@ -51,6 +54,14 @@ cd PyTestBasics
 ```
 
 ```powershell
+# Portal CRUD suite (create -> read -> clone -> delete, only its own portals)
+..\venv\Scripts\pytest -v -s portal_test.py --env=dev --html=report.html --self-contained-html
+
+# Same suite against a locally-running app (yarn dev in wtv.sharestudio2.0)
+..\venv\Scripts\pytest -v -s portal_test.py --base-url=http://localhost:3000
+```
+
+```powershell
 # Run just the cleanup test by name
 ..\venv\Scripts\pytest -v --env=prod -k "cleanup"
 ```
@@ -77,6 +88,9 @@ cd PyTestBasics
 | `-v` | **Verbose** — prints each test name with its PASS/FAIL, instead of just dots. |
 | `--env=prod` \| `--env=dev` | **Custom option** (defined in `conftest.py`). Selects which credentials/URLs load from `.env`: `*_PROD` keys for prod, plain keys for dev. Default is `dev`. |
 | `--webcast-type=<TYPE>` | **Custom option**. Restricts the run to a single webcast type instead of all five. |
+| `--base-url=<URL>` | **Custom option**. Overrides the admin URL for the run (e.g. a locally-running `next dev` at `http://localhost:3000`). Falls back to the `--env` URL when omitted. |
+| `HEADLESS=1` (env var) | Runs `portal_test.py` headless. Default is a visible browser. |
+| `PORTAL_CLIENT` / `PORTAL_ORG` / `PORTAL_LOGO_PATH` (env vars) | Optional `portal_test.py` inputs: which client/org to create the portal under, and the header-menu logo image (must be < 200 KB; falls back to `HEADSHOT_PATH`). |
 | `--html=report.html` | Writes a **pytest-html** report to `report.html` in the current folder. |
 | `--self-contained-html` | Inlines all CSS/JS/images into that one HTML file so it can be shared/opened anywhere. |
 | `-k "expr"` | Runs only tests whose name matches the expression (e.g. `-k "cleanup"`). |
@@ -97,9 +111,12 @@ cd PyTestBasics
 ### Prerequisites
 - **`.env`** in `PyTestBasics/` with prod keys: `URL_PROD`, `EMAIL_PROD`, `PASSWORD_PROD`,
   `TARGET_PORTAL`, and asset paths `SLIDE_PATH`, `VIDEO_PATH`, `HEADSHOT_PATH`, `AUDIO_PATH`.
+  (`HEADSHOT_PATHS` — comma-separated — uploads several headshots for the Audio / Audio & slides types.)
   (Org overrides `*_ORG_PROD` fall back to the plain prod values if unset.)
 - **Virtualenv** at `..\venv\` with `selenium`, `pytest`, `pytest-html`, `python-dotenv`.
-- **Chrome + matching chromedriver**; the suite runs headless (`--headless=new`, 1920×1080).
+- **Chrome + matching chromedriver** (Selenium Manager resolves the driver automatically
+  unless `DRIVER` is set). The webcast suite runs in a **visible** browser by default —
+  only `test_00_cleanup` and `cleanup_webcasts.py` are headless.
 
 ### What a run does
 - **`test_00_cleanup` runs first** — deletes leftover `Automated Webcast *` entries on the
