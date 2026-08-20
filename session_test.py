@@ -273,7 +273,7 @@ _FILE_SAVE_TIMEOUT = {"slide": 60, "video": 180, "headshot": 60, "audio": 180}
 # Per webcast type: the ordered (state, file) uploads. Slides go to both Preview
 # and Live; the primary media (video/audio) + headshot are Preview-only.
 CONTENT_SPECS = {
-    "VxS": [("preview", "slide"), ("live", "slide"), ("preview", "video")],
+    "VxS": [("preview", "slide"), ("preview", "video"), ("live", "slide")],
     "AxS": [("preview", "slide"), ("preview", "headshot"), ("preview", "audio"), ("live", "slide")],
     "V":   [("preview", "video")],
     "A":   [("preview", "headshot"), ("preview", "audio")],
