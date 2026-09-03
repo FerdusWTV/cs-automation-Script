@@ -107,8 +107,12 @@ AUDIO_INPUT = "//input[@type='file' and contains(@accept,'audio')]"
 ANY_FILE_INPUT = "//input[@type='file']"
 
 # Shown INSTEAD of a raw dropzone once a section already holds a file.
-UPLOAD_MORE_BTN = "//button[normalize-space()='Upload More']"
 SELECT_ALL_BTN = "//button[normalize-space()='Select All']"
+
+# The dropzone that 'Upload More' brings back also renders a 'Browse' button.
+# It is deliberately NOT used: clicking it opens the OS file dialog, which
+# Selenium cannot drive. Files go to the <input type=file> beside it instead.
+BROWSE_BTN = "//button[normalize-space()='Browse']"
 
 # The 'x' on an already-uploaded file. A new webcast ships with a default video
 # that must be cancelled before its dropzone reappears.
@@ -132,6 +136,23 @@ def uploaded_file_clear(section_label):
 # file. Headshots persist at speaker level across webcasts, so a freshly created
 # webcast can already carry one from an earlier run.
 SECTION_LABELS = {"headshot": "Upload headshot"}
+
+# Once SAVED, those sections render a gallery under a different heading, with an
+# 'Upload More' button in place of the dropzone. Keyed the same as SECTION_LABELS.
+GALLERY_LABELS = {"headshot": "Uploaded headshots"}
+
+
+def upload_more(gallery_label):
+    """The 'Upload More' button in the gallery titled `gallery_label`.
+
+    Scoped to its own section: the slides gallery renders an identical button,
+    so the unscoped locator would hit whichever came first in the DOM.
+    """
+    return (
+        f"//div[normalize-space()='{gallery_label}']"
+        "/following-sibling::div[contains(@class,'uploaded-slides')]"
+        "//button[normalize-space()='Upload More']"
+    )
 
 
 def status_dropdown(state):
@@ -163,6 +184,10 @@ def layout_switch(index):
 # --------------------------------------------------------------------------
 # Global
 # --------------------------------------------------------------------------
+# The app's fullscreen loading overlay. antd keeps this element in the DOM at all
+# times and toggles its visibility, so check visibility — never mere presence.
+FULLSCREEN_SPINNER_CSS = ".ant-spin-fullscreen"
+
 # SweetAlert popup body. Auto-dismisses in ~3s, and error messages use the same
 # container as success ones — so always check the text.
 SWAL_CONTAINER_ID = "swal2-html-container"

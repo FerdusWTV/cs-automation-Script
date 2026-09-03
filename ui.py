@@ -6,7 +6,9 @@ The rules encoded here were learned the hard way against the live app:
   intercept native clicks. `js_click` dispatches the click directly on the
   element, bypassing whatever is on top of it.
 * **Except antd Select dropdowns**, which only *open* on a real mousedown —
-  a JS click does nothing. Use `native_click` for those.
+  a JS click does nothing. Use `native_click` for those. Being real, those
+  clicks CAN be intercepted, so `native_click` first waits out the app's
+  fullscreen loading overlay.
 * **SweetAlert popups auto-dismiss in ~3 seconds.** Call `wait_for_swal`
   immediately after the click that triggers it; never sleep first.
 * **Errors reuse the success popup container**, so a popup appearing is not
@@ -99,12 +101,26 @@ def click(driver, wait, xpath, scroll=False, settle=0, center=True, pause=1):
     return element
 
 
+def wait_for_spinner(driver, timeout=60):
+    """Wait until the app's fullscreen loading overlay is gone.
+
+    It covers the whole viewport during saves and page refreshes, so a real
+    mouse click landing while it is up hits the overlay instead of the target
+    (ElementClickInterceptedException).
+    """
+    WebDriverWait(driver, timeout).until(
+        EC.invisibility_of_element_located((By.CSS_SELECTOR, L.FULLSCREEN_SPINNER_CSS))
+    )
+
+
 def native_click(driver, wait, xpath, scroll=True):
     """Click with a real mouse event.
 
     Required for antd Select dropdowns, which open on mousedown and ignore a
-    JS-dispatched click.
+    JS-dispatched click. Being a real click, it is also the one kind that an
+    overlay can intercept — hence the spinner wait that `js_click` doesn't need.
     """
+    wait_for_spinner(driver)
     element = find(wait, xpath)
     if scroll:
         scroll_into_view(driver, element)

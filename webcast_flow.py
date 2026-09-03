@@ -278,10 +278,12 @@ def switch_status(driver, wait, from_state, to_state):
 def upload_file(driver, wait, config, file_key):
     """Attach a file (or files) to its dropzone and commit it with its own Save.
 
-    `headshot_paths` may hold several images. Only a `multiple` input can take
-    them (in one newline-joined send_keys); the headshot dropzone on this app is
-    single-file — it is replaced by the uploaded-file list on the first attach
-    and offers no 'Upload More' — so there the extra paths are skipped.
+    `headshot_paths` may hold several images, and the headshot dropzone takes
+    them one at a time: it is replaced by the uploaded-file list on the first
+    attach, and only reappears via the 'Upload More' button that the SAVED
+    gallery renders. So each extra image costs its own Upload More + Save round
+    trip (see `_upload_one_more`). A `multiple` input, if the app ever renders
+    one, still takes the whole set in a single newline-joined send_keys.
     """
     spec = FILE_TYPES[file_key]
     paths = _resolve_paths(config, spec, file_key)
@@ -293,27 +295,47 @@ def upload_file(driver, wait, config, file_key):
     if len(paths) > 1 and file_input.get_attribute("multiple"):
         file_input.send_keys("\n".join(paths))
         print(f"  📎 Attached {len(paths)} {file_key} files.")
+        extra_paths = []
     else:
-        if len(paths) > 1:
-            # A single-file dropzone is REPLACED by the uploaded-file list on the
-            # first attach, and (unlike the slides section) offers no 'Upload
-            # More' — so there is no way to add a second file. Attaching one and
-            # carrying on beats failing the whole webcast.
-            print(f"  ⚠️ the '{file_key}' dropzone takes a single file — using "
-                  f"{paths[0]}, ignoring {len(paths) - 1} other configured path(s).")
         file_input.send_keys(paths[0])
-        if len(paths) > 1:  # TEMP DIAGNOSTIC
-            time.sleep(3)
-            with open("dbg_headshot_after_first.html", "w", encoding="utf-8") as f:
-                f.write(driver.page_source)
-            print("  [dbg] dumped dbg_headshot_after_first.html")
+        extra_paths = paths[1:]
 
     time.sleep(spec["settle"])  # let the dropzone read the file before saving
+    _save(driver, wait, file_key, spec)
+    print(f"  ✅ {file_key} saved" + (f" (1/{len(paths)})." if extra_paths else "."))
 
+    for n, path in enumerate(extra_paths, start=2):
+        _upload_one_more(driver, wait, file_key, spec, path, n, len(paths))
+
+
+def _save(driver, wait, file_key, spec):
+    """Click the panel's single Save button and assert the success popup."""
     ui.click(driver, wait, L.SAVE_BTN)
     ui.wait_for_swal(driver, f"{file_key}_save", timeout=spec["timeout"], expect="success")
-    print(f"  ✅ {file_key} saved.")
     time.sleep(2)
+
+
+def _upload_one_more(driver, wait, file_key, spec, path, n, total):
+    """Add one more file to a single-file section via its 'Upload More' button.
+
+    Once saved, the section renders a gallery ('Uploaded headshots') instead of a
+    dropzone, and 'Upload More' is what brings the dropzone back. The dropzone
+    also carries a 'Browse' button — deliberately not clicked, since that opens
+    the OS file dialog, which Selenium cannot drive; the path goes straight to
+    the <input type=file> rendered beside it.
+    """
+    gallery = L.GALLERY_LABELS.get(file_key)
+    if gallery is None:
+        pytest.fail(f"No gallery label known for '{file_key}' — cannot upload more than one.")
+
+    ui.click(driver, wait, L.upload_more(gallery), scroll=True, settle=2)
+
+    # clear_retry=False: the files already saved in this section must survive.
+    _find_dropzone(driver, wait, file_key, spec).send_keys(path)
+    time.sleep(spec["settle"])
+
+    _save(driver, wait, file_key, spec)
+    print(f"  ✅ {file_key} saved ({n}/{total}).")
 
 
 def _resolve_paths(config, spec, file_key):
