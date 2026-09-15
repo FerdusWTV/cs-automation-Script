@@ -114,12 +114,21 @@ def enter_embedded_mode(driver, wait, config, portal_id):
 
 
 def open_organization(driver, wait, config, org_name):
-    """Go to the Organizations list and open `org_name`'s clients."""
+    """Go to the Organizations list and open `org_name`'s clients.
+
+    Waits for the card click to actually land on the client list carrying
+    organizationId. Without that wait the caller reads query_params() while the
+    browser is still on /organization and gets organizationId=None, which then
+    poisons every URL built from it further down.
+    """
     open_with_retry(driver, f"{config['url'].rstrip('/')}/organization")
     ui.wait_for_spinner(driver)
     ui.type_text(driver, wait, L.ORG_SEARCH_INPUT, org_name)
     time.sleep(2)  # the org search is debounced
     ui.click(driver, wait, L.org_card_open(org_name))
+    WebDriverWait(driver, 30).until(
+        lambda d: "organizationId=" in d.current_url
+    )
     ui.wait_for_spinner(driver)
 
 
