@@ -65,7 +65,16 @@ def create_webcast(driver, wait, title):
     open_sessions_page(driver, wait)
     ui.click(driver, wait, L.NEW_WEBCAST_GROUP_BTN)
     ui.click(driver, wait, L.NEW_WEBCAST_MODAL_BTN)
+    run_new_webcast_wizard(driver, wait, title)
 
+
+def run_new_webcast_wizard(driver, wait, title):
+    """Steps 1-4 of the new-webcast wizard, once its first screen is open.
+
+    Split out from `create_webcast` so the embedded suite can reuse it: embedded
+    mode opens the wizard from its own single-option tile, but every step after
+    that is identical.
+    """
     # Step 1 — title
     ui.type_text(driver, wait, L.WIZARD_TITLE_INPUT, title)
     time.sleep(3)

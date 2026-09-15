@@ -60,6 +60,11 @@ For each webcast, `test_03` does:
 
 ### The five webcast types
 
+> These five apply to the **non-embedded** suite (`session_test.py`) only.
+> An **embedded** session is always **Video only** — see
+> [Embedded sessions](#embedded-sessions) below — so `03_embedded_test.py`
+> creates exactly **one** session and never sets a type.
+
 | Key | Type label in the UI | Files uploaded (in order) |
 |-----|----------------------|----------------------------|
 | `VxS` | Video & slides (default) | slide (Preview), slide (Live), video (Preview) |
@@ -70,6 +75,38 @@ For each webcast, `test_03` does:
 
 This mapping lives in `CONTENT_SPECS` in `session_test.py`. "Preview" / "Live" refers to the
 status dropdown on the Manage page — the suite switches status when the spec calls for it.
+
+### Embedded sessions
+
+`03_embedded_test.py` covers the embedded-sessions feature, and it does **not** use the
+table above. Embedded mode is a **client-level** flag: a client saved with *Embedded Portal*
+on is opened with `?embbedEnable=true&embbedPortalId=<id>`, and the admin then renders the
+session list directly, with a *Copy embed code* icon per row that opens the **Embed Code**
+modal.
+
+**An embedded session is always `Video only`.** `webcastTypeOptions(isNew, isEmbedded)` in
+the app filters the type list down to `VIDEO_ONLY_TYPES`, which leaves exactly **one** option
+— `Video only` — in both the new-session and the legacy list, and the wizard posts
+`webcastType: 'video'` by itself. So there is:
+
+* no per-type matrix for embedded, the way `WEBCAST_MATRIX` exists for the five types above;
+* no type argument on `embed_flow.create_session()`, and no setter for the embedded type;
+* no use for `--webcast-type` — it is a `session_test.py` option and does nothing here.
+
+The only type assertion in the embedded suite is that the single offered option is the one
+already selected (`test_17_manage_view_is_restricted`).
+
+This suite needs an **ADMIN** account (`EMAIL` / `PASSWORD` in `.env`) because it creates its
+own client on `/organization`, which sits behind `AdminGuard`. It reuses the client across
+runs rather than creating a new one each time.
+
+```bash
+# The embedded suite, recording results for TestRail
+..\venv\Scripts\pytest 03_embedded_test.py -v --env=dev --testrail-out=embedded_results.json --html=embedded_report.html --self-contained-html
+
+# Push that run into TestRail (project 2 / suite 7)
+python testrail_upload.py embedded_results.json --name "Embedded sessions - dev - automated"
+```
 
 ### Multi-headshot upload
 
@@ -241,7 +278,11 @@ headless, uncomment `options.add_argument("--headless=new")` in `session_test.py
 | Option | Default | Meaning |
 |--------|---------|---------|
 | `--env=dev\|prod` | `dev` | Which credential set loads from `.env`: `*_PROD` keys for prod, plain keys for dev. |
-| `--webcast-type=<KEY>` | *(all five)* | Restrict the run to one webcast: `VxS`, `AxS`, `V`, `A`, or `AxE`. |
+| `--webcast-type=<KEY>` | *(all five)* | **`session_test.py` only.** Restrict the run to one webcast: `VxS`, `AxS`, `V`, `A`, or `AxE`. No effect on the embedded suite, where a session is always `Video only`. |
+| `--embed-client=<NAME>` | `Automated Embedded` | **`03_embedded_test.py` only.** The embedded client to use; reused when it already exists, created otherwise. |
+| `--embed-org=<NAME>` | *(first organization)* | **`03_embedded_test.py` only.** Which organization to work in. |
+| `--embed-portal-id=<ID>` | *(discovered)* | **`03_embedded_test.py` only.** Portal whose sessions get embedded, when the created client has none. |
+| `--testrail-out=<PATH>` | *(off)* | Write `{case_id, status_id}` results for tests carrying a `@pytest.mark.testrail` marker, for `testrail_upload.py`. |
 | `--base-url=<URL>` | *(from `--env`)* | Override the admin URL — used by `portal_test.py`, e.g. a local `http://localhost:3000`. |
 
 ### Environment-variable options (`portal_test.py` only)

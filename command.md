@@ -54,6 +54,15 @@ cd PyTestBasics
 ```
 
 ```powershell
+# Embedded sessions suite. Embedded is ALWAYS Video only, so there is no
+# --webcast-type here: the suite creates a single session and never sets a type.
+..\venv\Scripts\pytest -v 03_embedded_test.py --env=dev --testrail-out=embedded_results.json --html=embedded_report.html --self-contained-html
+
+# Push that run into TestRail (project 2 / suite 7, Embedded Session)
+python testrail_upload.py embedded_results.json --name "Embedded sessions - dev - automated"
+```
+
+```powershell
 # Portal CRUD suite (create -> read -> clone -> delete, only its own portals)
 ..\venv\Scripts\pytest -v -s portal_test.py --env=dev --html=report.html --self-contained-html
 
@@ -87,7 +96,11 @@ cd PyTestBasics
 | `..\venv\Scripts\pytest` | Runs `pytest` from the venv (one level up in `venv\`) without needing to activate it first — guarantees the correct interpreter and installed deps. |
 | `-v` | **Verbose** — prints each test name with its PASS/FAIL, instead of just dots. |
 | `--env=prod` \| `--env=dev` | **Custom option** (defined in `conftest.py`). Selects which credentials/URLs load from `.env`: `*_PROD` keys for prod, plain keys for dev. Default is `dev`. |
-| `--webcast-type=<TYPE>` | **Custom option**. Restricts the run to a single webcast type instead of all five. |
+| `--webcast-type=<TYPE>` | **Custom option**, `session_test.py` only. Restricts the run to a single webcast type instead of all five. It does **nothing** for `03_embedded_test.py`, where a session is always `Video only`. |
+| `--embed-client=<NAME>` | **Custom option**, `03_embedded_test.py` only. The embedded client to use (default `Automated Embedded`); reused when it exists, created otherwise. |
+| `--embed-org=<NAME>` | **Custom option**, `03_embedded_test.py` only. Organization to work in. Defaults to the first on the list. |
+| `--embed-portal-id=<ID>` | **Custom option**, `03_embedded_test.py` only. Portal whose sessions get embedded, used when the created client has none of its own. |
+| `--testrail-out=<PATH>` | **Custom option**. Writes this run's results for every test carrying a `@pytest.mark.testrail` marker, ready for `testrail_upload.py`. |
 | `--base-url=<URL>` | **Custom option**. Overrides the admin URL for the run (e.g. a locally-running `next dev` at `http://localhost:3000`). Falls back to the `--env` URL when omitted. |
 | `HEADLESS=1` (env var) | Runs `portal_test.py` headless. Default is a visible browser. |
 | `PORTAL_CLIENT` / `PORTAL_ORG` / `PORTAL_LOGO_PATH` (env vars) | Optional `portal_test.py` inputs: which client/org to create the portal under, and the header-menu logo image (must be < 200 KB; falls back to `HEADSHOT_PATH`). |
@@ -100,6 +113,11 @@ cd PyTestBasics
 | `deactivate` | Exits the activated venv. |
 
 ### `--webcast-type` values
+
+Applies to `session_test.py` only. An **embedded** session is always `Video only` — the app
+filters the type list to a single option — so there is no type to choose there and no
+embedded equivalent of this table.
+
 | Value | Meaning | Underlying webcast type |
 |-------|---------|-------------------------|
 | `VxS` | Video & slides | `Video & slides (default)` |

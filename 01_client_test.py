@@ -23,7 +23,6 @@ Run:
 Optional .env / environment overrides:
     CLIENT_ORG        organization to open (super-admin only; default: first card)
     CLIENT_LANGUAGE   language option label   (default: English)
-    CLIENT_TEMPLATE   template option, matched by substring (default: Material)
 """
 
 import os
@@ -55,7 +54,6 @@ BASELINE = []
 CLIENT_LIST_URL = {"url": None}
 
 LANGUAGE = os.getenv("CLIENT_LANGUAGE", "English")
-TEMPLATE = os.getenv("CLIENT_TEMPLATE", "Material")
 
 # The modal's own wrapper class - every locator below is scoped to it so the
 # page behind the mask can never satisfy a query.
@@ -198,8 +196,20 @@ def _search_client_list(driver, term):
 
 
 def _open_add_client_modal(driver):
-    """Click 'Add a new client' and wait for the modal to be interactive."""
+    """Click 'Add a new client' and wait for the modal to be interactive.
+
+    Idempotent: if the modal is already open it is returned as-is. A test that
+    fails before its own close step would otherwise leave the mask up, and the
+    'Add a new client' button underneath it is unclickable — turning one failure
+    into a cascade across every test that follows.
+    """
     wait = _wait(driver)
+    already_open = driver.find_elements(
+        By.XPATH, f"{MODAL}//div[contains(@class,'con-title')][normalize-space()='New Client']"
+    )
+    if already_open:
+        return
+
     add_btn = wait.until(EC.presence_of_element_located((
         By.XPATH,
         "//div[@class='add-client-modal']//button[contains(@class,'save-button')]",
@@ -349,7 +359,12 @@ def test_03_modal_validates_required_fields(driver):
 
 
 def test_04_create_client(driver):
-    """CREATE - name + language + template style, saved from the modal."""
+    """CREATE - name + language, saved from the modal.
+
+    There is no template field: `TemplateOption` was removed from the Add Client
+    modal (it survives commented out at AddClientModal.js:145-148), so a client
+    is now just a name and a language.
+    """
     _open_add_client_modal(driver)
     wait = _wait(driver)
 
@@ -359,10 +374,8 @@ def test_04_create_client(driver):
     name_input.send_keys(CLIENT_NAME)
 
     language = _pick_antd_option(driver, "Select Language", LANGUAGE)
-    template = _pick_antd_option(driver, "Select Template", TEMPLATE, contains=True)
     print(f"   Name: {CLIENT_NAME}")
     print(f"   Language: {language}")
-    print(f"   Template: {template}")
 
     _submit_modal(driver)
 

@@ -45,6 +45,11 @@ CREATED = set()
 BASELINE = []
 # Portal-list URL captured in test_02 so later tests can return to the same list.
 PORTAL_LIST_URL = {"url": None}
+# The organization and client the baseline was taken under. The create form must
+# target these same two, or it builds the portal somewhere else entirely — which
+# on an ADMIN account means picking the first organization on the list, whose
+# client dropdown may well be empty.
+CONTEXT = {"org": None, "client": None}
 
 
 # ----------------------- FIXTURES ------------------------
@@ -245,6 +250,33 @@ def test_02_open_portal_list_and_snapshot_baseline(driver, base_url):
             break
         except TimeoutException:
             time.sleep(4)
+    # Where 'Organization' lands depends on the account's role. An org-scoped
+    # account goes straight to its own client list; an ADMIN / SUPER_ADMIN gets
+    # the organization list first and has to pick one. dev and prod differ here
+    # because there is no EMAIL_ORG_PROD, so a prod run falls back to the admin
+    # account and needs this extra hop.
+    org_cards = driver.find_elements(By.CSS_SELECTOR, ".org-card")
+    if org_cards and not driver.find_elements(By.CSS_SELECTOR, ".client-list-table-container"):
+        wanted = os.getenv("PORTAL_ORG")
+        card = None
+        if wanted:
+            matches = driver.find_elements(
+                By.XPATH,
+                f"//div[contains(@class,'org-card')][.//h6[normalize-space()='{wanted}']]"
+                "//div[contains(@class,'org-card-arrow')]",
+            )
+            if not matches:
+                pytest.fail(
+                    f"PORTAL_ORG='{wanted}' is not on the organization list. "
+                    f"{_dump(driver, 'org_list')}"
+                )
+            card = matches[0]
+        else:
+            card = driver.find_element(By.CSS_SELECTOR, ".org-card .org-card-arrow")
+        _click(driver, card)
+        _wait(driver, 20).until(EC.url_contains("/organization/client"))
+        time.sleep(2)
+
     try:
         wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, ".client-list-table-container")))
     except TimeoutException:
@@ -252,6 +284,9 @@ def test_02_open_portal_list_and_snapshot_baseline(driver, base_url):
             f"Client list never rendered (at {driver.current_url}). {_dump(driver, 'client_list')}"
         )
     time.sleep(3)
+
+    shown_org = driver.find_elements(By.CSS_SELECTOR, ".client-org-name")
+    CONTEXT["org"] = shown_org[0].text.strip() if shown_org else None
 
     # Pick the client named in PORTAL_CLIENT, else the first row.
     target_client = os.getenv("PORTAL_CLIENT")
@@ -265,6 +300,12 @@ def test_02_open_portal_list_and_snapshot_baseline(driver, base_url):
             By.CSS_SELECTOR, "td.portal-view-button"
         ) or False)
         row = buttons[0]
+
+    # Row layout is: name | id | 'View Portals'. The preceding-sibling axis runs
+    # backwards from `row`, so [1] is the id cell and [2] is the name.
+    name_cell = row.find_elements(By.XPATH, "./preceding-sibling::td[2]")
+    CONTEXT["client"] = target_client or (name_cell[0].text.strip() if name_cell else None)
+    print(f"   Working under organization '{CONTEXT['org']}', client '{CONTEXT['client']}'")
     _click(driver, row)
 
     wait.until(EC.presence_of_element_located(
@@ -305,11 +346,15 @@ def test_03_create_portal(driver, base_url, config):
     if driver.find_elements(
         By.XPATH, "//div[contains(@class,'ant-select')][.//span[normalize-space()='Select organization']]"
     ):
-        org = _pick_antd_option(driver, "Select organization", os.getenv("PORTAL_ORG"))
+        org = _pick_antd_option(
+            driver, "Select organization", os.getenv("PORTAL_ORG") or CONTEXT["org"]
+        )
         print(f"   Organization: {org}")
         time.sleep(3)
 
-    client = _pick_antd_option(driver, "Select client", os.getenv("PORTAL_CLIENT"))
+    client = _pick_antd_option(
+        driver, "Select client", os.getenv("PORTAL_CLIENT") or CONTEXT["client"]
+    )
     print(f"   Client: {client}")
 
     # Header menu logo is mandatory; react-dropzone's file input is hidden but writable.

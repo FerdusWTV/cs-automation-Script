@@ -26,7 +26,16 @@ PORTAL_TITLE = "(//p[@class='branding-information-text mt-1'])[1]"
 # --------------------------------------------------------------------------
 SESSIONS_NAV_BTN = "//div[contains(text(),'Sessions')]"
 NEW_WEBCAST_GROUP_BTN = "//div[@class='session-button-group-right']"
-NEW_WEBCAST_MODAL_BTN = "(//div[@class='stream-modal-container h-full'])[1]"
+# Anchored on the tile's label, not its class string: PR #942 reordered these
+# classes to 'h-full stream-modal-container', and the old exact-match
+# `@class='stream-modal-container h-full'` silently stopped matching.
+# `-root` is the outer wrapper and carries no onClick; the handler sits on the
+# inner div, so that wrapper has to be excluded or the click does nothing.
+NEW_WEBCAST_MODAL_BTN = (
+    "//div[contains(@class,'stream-modal-container')"
+    " and not(contains(@class,'stream-modal-container-root'))]"
+    "[.//p[normalize-space()='Create New Webcast']]"
+)
 
 WIZARD_TITLE_INPUT = "//input[@id='streamName']"
 WIZARD_NEXT_BTN = "//button[normalize-space()='Next']"
@@ -84,6 +93,9 @@ LAYOUT_SAVE_BTN = "//button[normalize-space()='Save']"
 # antd Select: typing into it and saving does NOT commit (antd discards
 # unconfirmed search text). The option must be clicked from the open dropdown.
 WEBCAST_TYPE_SELECTOR = "//input[@id='webcastType']/ancestor::div[contains(@class,'ant-select-selector')][1]"
+# The combobox input itself. antd opens the dropdown on ARROW_DOWN here, which
+# is the one way in that a floating toast cannot intercept.
+WEBCAST_TYPE_INPUT = "//input[@id='webcastType']"
 WEBCAST_TYPE_SELECTED = "//span[contains(@class,'ant-select-selection-item')]"
 
 
@@ -191,3 +203,178 @@ FULLSCREEN_SPINNER_CSS = ".ant-spin-fullscreen"
 # SweetAlert popup body. Auto-dismisses in ~3s, and error messages use the same
 # container as success ones — so always check the text.
 SWAL_CONTAINER_ID = "swal2-html-container"
+
+
+# ==========================================================================
+# Embedded sessions
+# ==========================================================================
+# Embedded mode is a CLIENT-level flag. A client saved with 'Embedded Portal'
+# on is opened with ?embbedEnable=true&embbedPortalId=<id>, and from there the
+# admin renders the session list directly instead of the portal list.
+# --------------------------------------------------------------------------
+
+# --- Organizations / clients navigation -----------------------------------
+ORG_SEARCH_INPUT = "//input[contains(@class,'connect-studio-search-input-small')]"
+
+
+def org_card_open(org_name):
+    """The 'open' arrow on the organization card named `org_name`."""
+    return (
+        f"//div[contains(@class,'org-card')][.//h6[normalize-space()='{org_name}']]"
+        "//div[contains(@class,'org-card-arrow')]"
+    )
+
+
+CLIENT_SEARCH_INPUT = "//div[contains(@class,'client-table-section')]//input[@class='search-input']"
+ADD_CLIENT_BTN = "//div[contains(@class,'add-client-modal')]//button[contains(@class,'save-button')]"
+
+# --- Add Client modal ------------------------------------------------------
+CLIENT_NAME_INPUT = "//div[contains(@class,'ant-modal')]//input[@name='name']"
+# AntSoloSelect renders without an id, so the Language select is reached
+# through its label rather than through the field itself.
+CLIENT_LANGUAGE_SELECTOR = (
+    "//div[contains(@class,'ant-modal')]//label[normalize-space()='Language']"
+    "/following::div[contains(@class,'ant-select-selector')][1]"
+)
+# The switch is a plain <input type=checkbox> inside ConnectStudioSwitchButton,
+# visually replaced by a .slider span — so the input itself is not clickable.
+# Click the slider; read the checkbox's `checked` property for the state.
+EMBED_SWITCH_CHECKBOX = (
+    "//div[contains(@class,'switch-button-container')]"
+    "[.//div[normalize-space()='Embedded Portal']]//input[@type='checkbox']"
+)
+EMBED_SWITCH_SLIDER = (
+    "//div[contains(@class,'switch-button-container')]"
+    "[.//div[normalize-space()='Embedded Portal']]//span[contains(@class,'slider')]"
+)
+CLIENT_SAVE_BTN = "//div[contains(@class,'ant-modal')]//button[@type='submit']"
+# The title row carries a back arrow and a close X, both bare react-icons svgs
+# with no distinguishing attribute — the close one is simply the last.
+CLIENT_MODAL_CLOSE = (
+    "(//div[contains(@class,'ant-modal')]//*[name()='svg'][contains(@class,'cursor-pointer')])[last()]"
+)
+
+
+def client_row_view_portals(client_name):
+    """The 'View Portals' cell of the client row named `client_name`."""
+    return (
+        f"//tr[td[normalize-space()='{client_name}']]"
+        "//td[contains(@class,'portal-view-button')]"
+    )
+
+
+# --- Session list in embedded mode ----------------------------------------
+SESSION_LIST_TITLE = "//div[contains(@class,'webcast-summary-title')]"
+# The portal LIST root. Absent in embedded mode because Portal/index.js returns
+# <SessionComponent /> before rendering it. Note this is the right thing to
+# assert on and PORTAL_SEARCH_INPUT is not: that search box lives in the global
+# header, so it is on screen in embedded mode too.
+PORTAL_SCREEN_ROOT = "//div[contains(@class,'portal-screen-root')]"
+IMPORT_WEBCAST_BTN = "//button[contains(normalize-space(),'Import Webcast')]"
+SIDEBAR_CREATE_PORTAL = "//*[normalize-space()='Create Portal']"
+SCHEDULE_WEBCAST_BTN = "//div[@class='session-button-group-right']"
+STREAM_MODAL_OPTION = "//div[contains(@class,'stream-modal-container-root')]"
+CREATE_NEW_WEBCAST_OPTION = "//p[normalize-space()='Create New Webcast']"
+LENOS_INTEGRATION_FIELD = "//input[@id='integrationId']"
+
+# The embed icon sits beside Delete in the row's action column. Both are
+# identical antd icon buttons, so the only thing telling them apart is the
+# embed one's rounded wrapper — the row also gains 'has-embed-action' when the
+# pair is rendered.
+SUMMARY_EMBED_BTN = (
+    ".//div[contains(@class,'webcast-summary-delete')]"
+    "//div[contains(@class,'rounded-md')]//button"
+)
+SUMMARY_HAS_EMBED_ACTION = ".//div[contains(@class,'has-embed-action')]"
+
+# Manage page tabs. In embedded mode the last four are not rendered at all.
+MANAGE_TAB = "//button[@role='tab']"
+
+
+def manage_tab(label):
+    return f"//button[@role='tab'][normalize-space()='{label}']"
+
+# --- Embed Session modal ---------------------------------------------------
+# Anchored on the body wrapper, not on the heading: the deployed modal is
+# titled 'Embed Code' while the source in the repo still says 'Embed Session',
+# so the heading is the one part of this modal that has already moved once.
+EMBED_MODAL = "//div[contains(@class,'ant-modal')][.//div[contains(@class,'embed-config')]]"
+EMBED_MODAL_TITLE = f"{EMBED_MODAL}//div[contains(@class,'ant-modal-title')]//div[contains(@class,'con-title')]"
+EMBED_SESSION_NAME = f"{EMBED_MODAL}//strong"
+# Read-only <textarea> holding the generated snippet. Its text is the single
+# source of truth for every snippet assertion — read `value`, not `.text`,
+# because antd's autosize textarea does not reflect the value as node text.
+EMBED_SNIPPET_TEXTAREA = f"{EMBED_MODAL}//textarea"
+
+EMBED_ADVANCED_SWITCH = (
+    f"{EMBED_MODAL}//label[normalize-space()='Advanced config']"
+    "/ancestor::div[1]//button[@role='switch']"
+)
+EMBED_RESPONSIVE_CHECKBOX = (
+    f"{EMBED_MODAL}//label[contains(@class,'ant-checkbox-wrapper')]"
+    "[contains(normalize-space(),'Responsive')]//input"
+)
+EMBED_ASPECT_SELECTOR = (
+    f"{EMBED_MODAL}//label[normalize-space()='Aspect ratio']"
+    "/following-sibling::div[contains(@class,'ant-select')][1]"
+)
+EMBED_BORDER_RADIUS_INPUT = (
+    f"{EMBED_MODAL}//label[normalize-space()='Border radius (px)']"
+    "/following::input[contains(@class,'ant-input-number-input')][1]"
+)
+EMBED_TITLE_INPUT = f"{EMBED_MODAL}//label[normalize-space()='Accessible title']/following::input[1]"
+EMBED_COPY_BTN = f"{EMBED_MODAL}//button[normalize-space()='Copy embed code']"
+EMBED_CLOSE_BTN = f"{EMBED_MODAL}//button[normalize-space()='Close']"
+EMBED_MODAL_MASK_CSS = ".ant-modal-mask"
+
+
+def embed_format_option(label):
+    """'HTML' / 'React / JSX' in the output-format radio group."""
+    return f"{EMBED_MODAL}//label[contains(@class,'ant-radio-button-wrapper')][normalize-space()='{label}']"
+
+
+def embed_size_input(label):
+    """The number input under 'Width' or 'Height'."""
+    return (
+        f"{EMBED_MODAL}//label[normalize-space()='{label}']"
+        "/following::input[contains(@class,'ant-input-number-input')][1]"
+    )
+
+
+def embed_size_unit_selector(label):
+    """The px/% unit select beside the 'Width' or 'Height' input."""
+    return (
+        f"{EMBED_MODAL}//label[normalize-space()='{label}']"
+        "/following::div[contains(@class,'ant-select-selector')][1]"
+    )
+
+
+def embed_permission_checkbox(label):
+    """A Permissions checkbox by its visible label, e.g. 'Fullscreen'."""
+    return (
+        f"{EMBED_MODAL}//label[contains(@class,'ant-checkbox-wrapper')]"
+        f"[.//text()[contains(.,'{label}')]]//input"
+    )
+
+
+def embed_advanced_selector(label):
+    """The antd Select under 'Loading' or 'Referrer policy'."""
+    return (
+        f"{EMBED_MODAL}//label[normalize-space()='{label}']"
+        "/following-sibling::div[contains(@class,'ant-select')][1]"
+    )
+
+
+def select_option(title):
+    """An option in the CURRENTLY OPEN antd dropdown, matched on its exact title.
+
+    Scoped to the visible dropdown on purpose: antd keeps every dropdown it has
+    ever opened mounted, flagging the closed ones with `ant-select-dropdown-hidden`.
+    An unscoped match therefore picks the option out of whichever dropdown was
+    opened first — so setting the Height unit would silently re-set the Width one.
+    """
+    return (
+        "//div[contains(@class,'ant-select-dropdown')"
+        " and not(contains(@class,'ant-select-dropdown-hidden'))]"
+        f"//div[contains(@class,'ant-select-item-option')][@title='{title}']"
+    )
