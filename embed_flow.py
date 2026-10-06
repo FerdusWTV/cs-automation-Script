@@ -125,6 +125,14 @@ def open_organization(driver, wait, config, org_name):
     ui.wait_for_spinner(driver)
     ui.type_text(driver, wait, L.ORG_SEARCH_INPUT, org_name)
     time.sleep(2)  # the org search is debounced
+    if not ui.find_all(driver, L.org_card_open(org_name)):
+        time.sleep(3)
+    if not ui.find_all(driver, L.org_card_open(org_name)):
+        found = [e.text.strip() for e in driver.find_elements(By.CSS_SELECTOR, ".org-card h6")]
+        raise AssertionError(
+            f"Organization '{org_name}' is not on the Organizations list (search returned {found}). "
+            "Fix EMBED_ORG / --embed-org, or unset it to use the org owning TARGET_PORTAL."
+        )
     ui.click(driver, wait, L.org_card_open(org_name))
     WebDriverWait(driver, 30).until(
         lambda d: "organizationId=" in d.current_url

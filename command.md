@@ -71,6 +71,23 @@ python testrail_upload.py embedded_results.json --name "Embedded sessions - dev 
 ```
 
 ```powershell
+# Multi-language suite (client default language -> portal additional languages ->
+# per-language home content -> per-language publish URLs).
+..\venv\Scripts\pytest -v -s 04_language_test.py --env=dev --testrail-out=language_results.json --html=language_report.html --self-contained-html
+
+# Include the session-level checks by pointing at an EXISTING session (read-only;
+# without it those two cases are skipped, i.e. reported to TestRail as blocked)
+$env:LANG_SESSION_URL = "https://<admin>/<portalId>/session/<webcastId>"
+
+# Push that run into TestRail (project 2 / suite 7, Language)
+python testrail_upload.py language_results.json --name "Language - dev - automated" --comment "Automated: 04_language_test.py"
+
+# (Re)create the Language test cases in TestRail - --dry-run prints and sends nothing
+..\venv\Scripts\python testrail_language_cases.py --dry-run          # suite 7, Admin Panel
+..\venv\Scripts\python testrail_portal_language_cases.py --dry-run   # suite 8, Portal Panel
+```
+
+```powershell
 # Run just the cleanup test by name
 ..\venv\Scripts\pytest -v --env=prod -k "cleanup"
 ```

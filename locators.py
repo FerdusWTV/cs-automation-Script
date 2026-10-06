@@ -19,7 +19,11 @@ WELCOME_HEADER_CLASS = "header-title"
 
 PORTAL_SEARCH_INPUT = "//input[@placeholder='Search portal']"
 PORTAL_EDIT_BTN = "//button[normalize-space()='Edit']"
-PORTAL_TITLE = "(//p[@class='branding-information-text mt-1'])[1]"
+# Redesigned Branding page header ("Portal"); the legacy info text is the fallback.
+PORTAL_TITLE = (
+    "(//div[contains(@class,'bf-header')]/h2[contains(@class,'bf-title')]"
+    " | //p[@class='branding-information-text mt-1'])[1]"
+)
 
 # --------------------------------------------------------------------------
 # Sessions page + the 'new webcast' wizard
