@@ -1,0 +1,1092 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8"/>
+    <title id="head-title">Automation Test Report</title>
+      <style type="text/css">body {
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 12px;
+  /* do not increase min-width as some may use split screens */
+  min-width: 800px;
+  color: #999;
+}
+
+h1 {
+  font-size: 24px;
+  color: black;
+}
+
+h2 {
+  font-size: 16px;
+  color: black;
+}
+
+p {
+  color: black;
+}
+
+a {
+  color: #999;
+}
+
+table {
+  border-collapse: collapse;
+}
+
+/******************************
+ * SUMMARY INFORMATION
+ ******************************/
+#environment td {
+  padding: 5px;
+  border: 1px solid #e6e6e6;
+  vertical-align: top;
+}
+#environment tr:nth-child(odd) {
+  background-color: #f6f6f6;
+}
+#environment ul {
+  margin: 0;
+  padding: 0 20px;
+}
+
+/******************************
+ * TEST RESULT COLORS
+ ******************************/
+span.passed,
+.passed .col-result {
+  color: green;
+}
+
+span.skipped,
+span.xfailed,
+span.rerun,
+.skipped .col-result,
+.xfailed .col-result,
+.rerun .col-result {
+  color: orange;
+}
+
+span.error,
+span.failed,
+span.xpassed,
+.error .col-result,
+.failed .col-result,
+.xpassed .col-result {
+  color: red;
+}
+
+.col-links__extra {
+  margin-right: 3px;
+}
+
+/******************************
+ * RESULTS TABLE
+ *
+ * 1. Table Layout
+ * 2. Extra
+ * 3. Sorting items
+ *
+ ******************************/
+/*------------------
+ * 1. Table Layout
+ *------------------*/
+#results-table {
+  border: 1px solid #e6e6e6;
+  color: #999;
+  font-size: 12px;
+  width: 100%;
+}
+#results-table th,
+#results-table td {
+  padding: 5px;
+  border: 1px solid #e6e6e6;
+  text-align: left;
+}
+#results-table th {
+  font-weight: bold;
+}
+
+/*------------------
+ * 2. Extra
+ *------------------*/
+.logwrapper {
+  max-height: 230px;
+  overflow-y: scroll;
+  background-color: #e6e6e6;
+}
+.logwrapper.expanded {
+  max-height: none;
+}
+.logwrapper.expanded .logexpander:after {
+  content: "collapse [-]";
+}
+.logwrapper .logexpander {
+  z-index: 1;
+  position: sticky;
+  top: 10px;
+  width: max-content;
+  border: 1px solid;
+  border-radius: 3px;
+  padding: 5px 7px;
+  margin: 10px 0 10px calc(100% - 80px);
+  cursor: pointer;
+  background-color: #e6e6e6;
+}
+.logwrapper .logexpander:after {
+  content: "expand [+]";
+}
+.logwrapper .logexpander:hover {
+  color: #000;
+  border-color: #000;
+}
+.logwrapper .log {
+  min-height: 40px;
+  position: relative;
+  top: -50px;
+  height: calc(100% + 50px);
+  border: 1px solid #e6e6e6;
+  color: black;
+  display: block;
+  font-family: "Courier New", Courier, monospace;
+  padding: 5px;
+  padding-right: 80px;
+  white-space: pre-wrap;
+}
+
+div.media {
+  border: 1px solid #e6e6e6;
+  float: right;
+  height: 240px;
+  margin: 0 5px;
+  overflow: hidden;
+  width: 320px;
+}
+
+.media-container {
+  display: grid;
+  grid-template-columns: 25px auto 25px;
+  align-items: center;
+  flex: 1 1;
+  overflow: hidden;
+  height: 200px;
+}
+
+.media-container--fullscreen {
+  grid-template-columns: 0px auto 0px;
+}
+
+.media-container__nav--right,
+.media-container__nav--left {
+  text-align: center;
+  cursor: pointer;
+}
+
+.media-container__viewport {
+  cursor: pointer;
+  text-align: center;
+  height: inherit;
+}
+.media-container__viewport img,
+.media-container__viewport video {
+  object-fit: cover;
+  width: 100%;
+  max-height: 100%;
+}
+
+.media__name,
+.media__counter {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around;
+  flex: 0 0 25px;
+  align-items: center;
+}
+
+.collapsible td:not(.col-links) {
+  cursor: pointer;
+}
+.collapsible td:not(.col-links):hover::after {
+  color: #bbb;
+  font-style: italic;
+  cursor: pointer;
+}
+
+.col-result {
+  width: 130px;
+}
+.col-result:hover::after {
+  content: " (hide details)";
+}
+
+.col-result.collapsed:hover::after {
+  content: " (show details)";
+}
+
+#environment-header h2:hover::after {
+  content: " (hide details)";
+  color: #bbb;
+  font-style: italic;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+#environment-header.collapsed h2:hover::after {
+  content: " (show details)";
+  color: #bbb;
+  font-style: italic;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+/*------------------
+ * 3. Sorting items
+ *------------------*/
+.sortable {
+  cursor: pointer;
+}
+.sortable.desc:after {
+  content: " ";
+  position: relative;
+  left: 5px;
+  bottom: -12.5px;
+  border: 10px solid #4caf50;
+  border-bottom: 0;
+  border-left-color: transparent;
+  border-right-color: transparent;
+}
+.sortable.asc:after {
+  content: " ";
+  position: relative;
+  left: 5px;
+  bottom: 12.5px;
+  border: 10px solid #4caf50;
+  border-top: 0;
+  border-left-color: transparent;
+  border-right-color: transparent;
+}
+
+.hidden, .summary__reload__button.hidden {
+  display: none;
+}
+
+.summary__data {
+  flex: 0 0 550px;
+}
+.summary__reload {
+  flex: 1 1;
+  display: flex;
+  justify-content: center;
+}
+.summary__reload__button {
+  flex: 0 0 300px;
+  display: flex;
+  color: white;
+  font-weight: bold;
+  background-color: #4caf50;
+  text-align: center;
+  justify-content: center;
+  align-items: center;
+  border-radius: 3px;
+  cursor: pointer;
+}
+.summary__reload__button:hover {
+  background-color: #46a049;
+}
+.summary__spacer {
+  flex: 0 0 550px;
+}
+
+.controls {
+  display: flex;
+  justify-content: space-between;
+}
+
+.filters,
+.collapse {
+  display: flex;
+  align-items: center;
+}
+.filters button,
+.collapse button {
+  color: #999;
+  border: none;
+  background: none;
+  cursor: pointer;
+  text-decoration: underline;
+}
+.filters button:hover,
+.collapse button:hover {
+  color: #ccc;
+}
+
+.filter__label {
+  margin-right: 10px;
+}
+
+      </style>
+    
+  </head>
+  <body>
+    <h1 id="title">Automation Test Report</h1>
+    <p>Report generated on 06-Oct-2026 at 22:09:43 by <a href="https://pypi.python.org/pypi/pytest-html">pytest-html</a>
+        v4.1.1</p>
+    <div id="environment-header">
+      <h2>Environment</h2>
+    </div>
+    <table id="environment"></table>
+    <!-- TEMPLATES -->
+      <template id="template_environment_row">
+      <tr>
+        <td></td>
+        <td></td>
+      </tr>
+    </template>
+    <template id="template_results-table__body--empty">
+      <tbody class="results-table-row">
+        <tr id="not-found-message">
+          <td colspan="4">No results found. Check the filters.</th>
+        </tr>
+    </template>
+    <template id="template_results-table__tbody">
+      <tbody class="results-table-row">
+        <tr class="collapsible">
+        </tr>
+        <tr class="extras-row">
+          <td class="extra" colspan="4">
+            <div class="extraHTML"></div>
+            <div class="media">
+              <div class="media-container">
+                  <div class="media-container__nav--left"><</div>
+                  <div class="media-container__viewport">
+                    <img src="" />
+                    <video controls>
+                      <source src="" type="video/mp4">
+                    </video>
+                  </div>
+                  <div class="media-container__nav--right">></div>
+                </div>
+                <div class="media__name"></div>
+                <div class="media__counter"></div>
+            </div>
+            <div class="logwrapper">
+              <div class="logexpander"></div>
+              <div class="log"></div>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </template>
+    <!-- END TEMPLATES -->
+    <div class="summary">
+      <div class="summary__data">
+        <h2>Summary</h2>
+        <div class="additional-summary prefix">
+          Selenium Version: 4.36.0
+        </div>
+        <p class="run-count">73 tests took 00:31:05.</p>
+        <p class="filter">(Un)check the boxes to filter the results.</p>
+        <div class="summary__reload">
+          <div class="summary__reload__button hidden" onclick="location.reload()">
+            <div>There are still tests running. <br />Reload this page to get the latest results!</div>
+          </div>
+        </div>
+        <div class="summary__spacer"></div>
+        <div class="controls">
+          <div class="filters">
+            <input checked="true" class="filter" name="filter_checkbox" type="checkbox" data-test-result="failed" />
+            <span class="failed">13 Failed,</span>
+            <input checked="true" class="filter" name="filter_checkbox" type="checkbox" data-test-result="passed" />
+            <span class="passed">60 Passed,</span>
+            <input checked="true" class="filter" name="filter_checkbox" type="checkbox" data-test-result="skipped" />
+            <span class="skipped">5 Skipped,</span>
+            <input checked="true" class="filter" name="filter_checkbox" type="checkbox" data-test-result="xfailed" disabled/>
+            <span class="xfailed">0 Expected failures,</span>
+            <input checked="true" class="filter" name="filter_checkbox" type="checkbox" data-test-result="xpassed" disabled/>
+            <span class="xpassed">0 Unexpected passes,</span>
+            <input checked="true" class="filter" name="filter_checkbox" type="checkbox" data-test-result="error" disabled/>
+            <span class="error">0 Errors,</span>
+            <input checked="true" class="filter" name="filter_checkbox" type="checkbox" data-test-result="rerun" disabled/>
+            <span class="rerun">0 Reruns</span>
+          </div>
+          <div class="collapse">
+            <button id="show_all_details">Show all details</button>&nbsp;/&nbsp;<button id="hide_all_details">Hide all details</button>
+          </div>
+        </div>
+      </div>
+      <div class="additional-summary summary">
+      </div>
+      <div class="additional-summary postfix">
+      </div>
+    </div>
+    <table id="results-table">
+      <thead id="results-table-head">
+        <tr>
+          <th class="sortable" data-column-type="result">Result</th>
+          <th class="sortable" data-column-type="testId">Test</th>
+          <th class="sortable" data-column-type="duration">Duration</th>
+          <th>Links</th>
+        </tr>
+      </thead>
+    </table>
+  </body>
+  <footer>
+    <div id="data-container" data-jsonblob="{&#34;environment&#34;: {&#34;Python&#34;: &#34;3.14.7&#34;, &#34;Platform&#34;: &#34;Windows-11-10.0.26200-SP0&#34;, &#34;Packages&#34;: {&#34;pytest&#34;: &#34;8.4.2&#34;, &#34;pluggy&#34;: &#34;1.6.0&#34;}, &#34;Plugins&#34;: {&#34;html&#34;: &#34;4.1.1&#34;, &#34;metadata&#34;: &#34;3.1.1&#34;}, &#34;JAVA_HOME&#34;: &#34;C:\\Program Files\\Eclipse Adoptium\\jdk-21.0.12.8-hotspot&#34;}, &#34;tests&#34;: {&#34;01_client_test.py::test_01_login&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;01_client_test.py::test_01_login&#34;, &#34;duration&#34;: &#34;00:00:26&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;01_client_test.py::test_01_login&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:26&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\nPASS: Logged in: Welcome to\n&#34;}], &#34;01_client_test.py::test_02_open_client_list_and_snapshot_baseline&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;01_client_test.py::test_02_open_client_list_and_snapshot_baseline&#34;, &#34;duration&#34;: &#34;00:00:21&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;01_client_test.py::test_02_open_client_list_and_snapshot_baseline&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:21&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\nPASS: Client list for &amp;#x27;Automated Test ORG&amp;#x27;: https://connectstudio-admin-dev.world-television.com/organization/client?organizationId=689486e0b03abd51eb5b44ec&amp;amp;organizationName=Automated%20Test%20ORG\n   Baseline - 8 existing client(s) on this page, all protected:\n     - Automated_Client_001\n     - AUTO\n     - Automated client 002\n     - Automated Video Indexer\n     - Embedded Test Client\n     - Embedded Client 2\n     - Automated Client d8b5d0 - 001\n     - Automated Embedded\n&#34;}], &#34;01_client_test.py::test_03_modal_validates_required_fields&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Failed&#34;, &#34;testId&#34;: &#34;01_client_test.py::test_03_modal_validates_required_fields&#34;, &#34;duration&#34;: &#34;00:00:40&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Failed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;01_client_test.py::test_03_modal_validates_required_fields&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:40&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;driver = &amp;lt;selenium.webdriver.chrome.webdriver.WebDriver (session=&amp;quot;98ea232a7ca84589c614032d27438a72&amp;quot;)&amp;gt;\n\n    def test_03_modal_validates_required_fields(driver):\n        &amp;quot;&amp;quot;&amp;quot;VALIDATION - an empty submit reports both required fields and creates nothing.\n    \n        Name is a yup-validated Formik field; language is checked by hand in\n        `onClientSave` and short-circuits before the POST.\n        &amp;quot;&amp;quot;&amp;quot;\n        _open_add_client_modal(driver)\n        _submit_modal(driver)\n    \n        wait = _wait(driver)\n        try:\n            wait.until(EC.presence_of_element_located(\n                (By.XPATH, f&amp;quot;{MODAL}//div[normalize-space()=&amp;#x27;Name is required&amp;#x27;]&amp;quot;)\n            ))\n&amp;gt;           wait.until(EC.presence_of_element_located(\n                (By.XPATH, f&amp;quot;{MODAL}//div[normalize-space()=&amp;#x27;Language is required&amp;#x27;]&amp;quot;)\n            ))\n\n01_client_test.py:335: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _\n\nself = &amp;lt;selenium.webdriver.support.wait.WebDriverWait (session=&amp;quot;98ea232a7ca84589c614032d27438a72&amp;quot;)&amp;gt;\nmethod = &amp;lt;function presence_of_element_located.&amp;lt;locals&amp;gt;._predicate at 0x00000200320D9590&amp;gt;\nmessage = &amp;#x27;&amp;#x27;\n\n    def until(self, method: Callable[[D], Union[Literal[False], T]], message: str = &amp;quot;&amp;quot;) -&amp;gt; T:\n        &amp;quot;&amp;quot;&amp;quot;Wait until the method returns a value that is not False.\n    \n        Calls the method provided with the driver as an argument until the\n        return value does not evaluate to ``False``.\n    \n        Parameters:\n        -----------\n        method: callable(WebDriver)\n            - A callable object that takes a WebDriver instance as an argument.\n    \n        message: str\n            - Optional message for :exc:`TimeoutException`\n    \n        Return:\n        -------\n        object: T\n            - The result of the last call to `method`\n    \n        Raises:\n        -------\n        TimeoutException\n            - If &amp;#x27;method&amp;#x27; does not return a truthy value within the WebDriverWait\n            object&amp;#x27;s timeout\n    \n        Example:\n        --------\n        &amp;gt;&amp;gt;&amp;gt; from selenium.webdriver.common.by import By\n        &amp;gt;&amp;gt;&amp;gt; from selenium.webdriver.support.ui import WebDriverWait\n        &amp;gt;&amp;gt;&amp;gt; from selenium.webdriver.support import expected_conditions as EC\n    \n        # Wait until an element is visible on the page\n        &amp;gt;&amp;gt;&amp;gt; wait = WebDriverWait(driver, 10)\n        &amp;gt;&amp;gt;&amp;gt; element = wait.until(EC.visibility_of_element_located((By.ID, &amp;quot;exampleId&amp;quot;)))\n        &amp;gt;&amp;gt;&amp;gt; print(element.text)\n        &amp;quot;&amp;quot;&amp;quot;\n        screen = None\n        stacktrace = None\n    \n        end_time = time.monotonic() + self._timeout\n        while True:\n            try:\n                value = method(self._driver)\n                if value:\n                    return value\n            except self._ignored_exceptions as exc:\n                screen = getattr(exc, &amp;quot;screen&amp;quot;, None)\n                stacktrace = getattr(exc, &amp;quot;stacktrace&amp;quot;, None)\n            if time.monotonic() &amp;gt; end_time:\n                break\n            time.sleep(self._poll)\n&amp;gt;       raise TimeoutException(message, screen, stacktrace)\nE       selenium.common.exceptions.TimeoutException: Message: \nE       Stacktrace:\nE       \tchromedriver!GetHandleVerifier [0x7ff6773a9d55+5a55]\nE       \tchromedriver!(No symbol) [0x7ff6772cf540]\nE       \tchromedriver!(No symbol) [0x7ff6770f45fd]\nE       \tchromedriver!(No symbol) [0x7ff67714fca1]\nE       \tchromedriver!(No symbol) [0x7ff67714ff6c]\nE       \tchromedriver!(No symbol) [0x7ff6771a3077]\nE       \tchromedriver!(No symbol) [0x7ff67719fcd9]\nE       \tchromedriver!(No symbol) [0x7ff677141a12]\nE       \tchromedriver!(No symbol) [0x7ff677142823]\nE       \tchromedriver!GetHandleVerifier [0x7ff6777c04b1+41c1b1]\nE       \tchromedriver!GetHandleVerifier [0x7ff6777ee26b+449f6b]\nE       \tchromedriver!GetHandleVerifier [0x7ff6777e274e+43e44e]\nE       \tchromedriver!GetHandleVerifier [0x7ff6774a32fe+feffe]\nE       \tchromedriver!(No symbol) [0x7ff6772dcb55]\nE       \tchromedriver!(No symbol) [0x7ff6772d7f64]\nE       \tchromedriver!(No symbol) [0x7ff6772d80f4]\nE       \tchromedriver!(No symbol) [0x7ff6772c2e4c]\nE       \tKERNEL32!BaseThreadInitThunk [0x7ffb6c3fcdf7+17]\nE       \tntdll!RtlUserThreadStart [0x7ffb6d7bee4c+2c]\n\n..\\venv\\Lib\\site-packages\\selenium\\webdriver\\support\\wait.py:138: TimeoutException\n\nDuring handling of the above exception, another exception occurred:\n\ndriver = &amp;lt;selenium.webdriver.chrome.webdriver.WebDriver (session=&amp;quot;98ea232a7ca84589c614032d27438a72&amp;quot;)&amp;gt;\n\n    def test_03_modal_validates_required_fields(driver):\n        &amp;quot;&amp;quot;&amp;quot;VALIDATION - an empty submit reports both required fields and creates nothing.\n    \n        Name is a yup-validated Formik field; language is checked by hand in\n        `onClientSave` and short-circuits before the POST.\n        &amp;quot;&amp;quot;&amp;quot;\n        _open_add_client_modal(driver)\n        _submit_modal(driver)\n    \n        wait = _wait(driver)\n        try:\n            wait.until(EC.presence_of_element_located(\n                (By.XPATH, f&amp;quot;{MODAL}//div[normalize-space()=&amp;#x27;Name is required&amp;#x27;]&amp;quot;)\n            ))\n            wait.until(EC.presence_of_element_located(\n                (By.XPATH, f&amp;quot;{MODAL}//div[normalize-space()=&amp;#x27;Language is required&amp;#x27;]&amp;quot;)\n            ))\n        except TimeoutException:\n&amp;gt;           pytest.fail(\n                f&amp;quot;Empty submit did not report both required fields. &amp;quot;\n                f&amp;quot;{_dump(driver, &amp;#x27;client_validation&amp;#x27;)}&amp;quot;\n            )\nE           Failed: Empty submit did not report both required fields. diagnostics saved to failure_client_validation.png / failure_client_validation.html\n\n01_client_test.py:339: Failed\n&#34;}], &#34;01_client_test.py::test_04_create_client&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;01_client_test.py::test_04_create_client&#34;, &#34;duration&#34;: &#34;00:00:13&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;01_client_test.py::test_04_create_client&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:13&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n   Name: Automated Client ec2386 - 001\n   Language: English\nPASS: Created client &amp;#x27;Automated Client ec2386 - 001&amp;#x27;\n&#34;}], &#34;01_client_test.py::test_05_created_client_is_listed&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;01_client_test.py::test_05_created_client_is_listed&#34;, &#34;duration&#34;: &#34;00:00:10&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;01_client_test.py::test_05_created_client_is_listed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:10&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\nPASS: Listed &amp;#x27;Automated Client ec2386 - 001&amp;#x27; (id 6ac5165744ebaf22961904d9)\n&#34;}], &#34;01_client_test.py::test_06_baseline_intact&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;01_client_test.py::test_06_baseline_intact&#34;, &#34;duration&#34;: &#34;00:00:16&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;01_client_test.py::test_06_baseline_intact&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:16&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\nPASS: All 8 baseline client(s) intact\n   Left behind (no delete in the admin UI): [&amp;#x27;Automated Client ec2386 - 001&amp;#x27;]\n&#34;}], &#34;02_portal_test.py::test_01_login&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;02_portal_test.py::test_01_login&#34;, &#34;duration&#34;: &#34;00:00:36&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;02_portal_test.py::test_01_login&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:36&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\nPASS: Logged in: Welcome to\n&#34;}], &#34;02_portal_test.py::test_02_open_portal_list_and_snapshot_baseline&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;02_portal_test.py::test_02_open_portal_list_and_snapshot_baseline&#34;, &#34;duration&#34;: &#34;00:00:24&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;02_portal_test.py::test_02_open_portal_list_and_snapshot_baseline&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:24&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n   Working under organization &amp;#x27;Automated Test ORG&amp;#x27;, client &amp;#x27;Automated_Client_001&amp;#x27;\nPASS: Portal list: https://connectstudio-admin-dev.world-television.com/organization/portal?&amp;amp;organizationId=689486e0b03abd51eb5b44ec&amp;amp;organizationName=Automated%20Test%20ORG&amp;amp;clientId=6894aa5bb03abd51eb5b44ed&amp;amp;clientName=Automated_Client_001\n   Baseline - 1 existing portal(s) on this page, all protected:\n     - Automated Test Portal 002\n&#34;}], &#34;02_portal_test.py::test_03_create_portal&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;02_portal_test.py::test_03_create_portal&#34;, &#34;duration&#34;: &#34;00:00:33&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;02_portal_test.py::test_03_create_portal&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:33&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n   Client: Automated_Client_001\n   Portal created - id: 6ac516cd89bd04668da5b7bd\nPASS: Created portal &amp;#x27;Automated Portal 8d0195 - 001&amp;#x27; (id 6ac516cd89bd04668da5b7bd)\n&#34;}], &#34;02_portal_test.py::test_04_read_created_portal&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;02_portal_test.py::test_04_read_created_portal&#34;, &#34;duration&#34;: &#34;00:00:16&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;02_portal_test.py::test_04_read_created_portal&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:16&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\nPASS: Portal visible on the list: Automated Portal 8d0195 - 001\n&#34;}], &#34;02_portal_test.py::test_05_clone_created_portal&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;02_portal_test.py::test_05_clone_created_portal&#34;, &#34;duration&#34;: &#34;00:00:27&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;02_portal_test.py::test_05_clone_created_portal&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:27&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\nPASS: Cloned portal: Automated Portal 8d0195 - 001 Clone\n&#34;}], &#34;02_portal_test.py::test_06_delete_created_portals_only&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;02_portal_test.py::test_06_delete_created_portals_only&#34;, &#34;duration&#34;: &#34;00:00:41&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;02_portal_test.py::test_06_delete_created_portals_only&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:41&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n  Deleted &amp;#x27;Automated Portal 8d0195 - 001 Clone&amp;#x27;\n  Deleted &amp;#x27;Automated Portal 8d0195 - 001&amp;#x27;\nPASS: Deleted 2 portal(s) created by this run\n&#34;}], &#34;02_portal_test.py::test_07_baseline_untouched&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;02_portal_test.py::test_07_baseline_untouched&#34;, &#34;duration&#34;: &#34;00:00:12&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;02_portal_test.py::test_07_baseline_untouched&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:12&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\nPASS: Baseline intact - 1 pre-existing portal(s) untouched\n&#34;}], &#34;03_embedded_test.py::test_00_login&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;03_embedded_test.py::test_00_login&#34;, &#34;duration&#34;: &#34;00:00:34&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;03_embedded_test.py::test_00_login&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:34&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2705 Login successful: Welcome to\nCONNECT\nSTUDIO\n&#34;}], &#34;03_embedded_test.py::test_01_detect_admin_access&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;03_embedded_test.py::test_01_detect_admin_access&#34;, &#34;duration&#34;: &#34;00:00:02&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;03_embedded_test.py::test_01_detect_admin_access&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:02&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2705 Admin access confirmed.\n&#34;}], &#34;03_embedded_test.py::test_02_resolve_target_organization&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;03_embedded_test.py::test_02_resolve_target_organization&#34;, &#34;duration&#34;: &#34;00:00:21&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;03_embedded_test.py::test_02_resolve_target_organization&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:21&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2705 Target portal 68dbad0dd54a6a17a379995d belongs to org &amp;#x27;Organization ID: 689486e0b03abd51eb5b44ec&amp;#x27; (689486e0b03abd51eb5b44ec)\n&#34;}], &#34;03_embedded_test.py::test_03_embed_switch_offered&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;03_embedded_test.py::test_03_embed_switch_offered&#34;, &#34;duration&#34;: &#34;00:00:04&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;03_embedded_test.py::test_03_embed_switch_offered&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:04&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2705 &amp;#x27;Embedded Portal&amp;#x27; switch offered, defaulting to off.\n&#34;}], &#34;03_embedded_test.py::test_04_create_embedded_client&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Skipped&#34;, &#34;testId&#34;: &#34;03_embedded_test.py::test_04_create_embedded_client&#34;, &#34;duration&#34;: &#34;00:00:07&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Skipped&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;03_embedded_test.py::test_04_create_embedded_client&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:07&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;(&amp;#x27;C:\\\\Users\\\\User\\\\selenium_project\\\\PyTestBasics\\\\03_embedded_test.py&amp;#x27;, 274, &amp;quot;Skipped: Embedded client &amp;#x27;Automated Embedded&amp;#x27; already exists \u2014 reused, not recreated.&amp;quot;)\n&#34;}], &#34;03_embedded_test.py::test_05_create_plain_client&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Skipped&#34;, &#34;testId&#34;: &#34;03_embedded_test.py::test_05_create_plain_client&#34;, &#34;duration&#34;: &#34;00:00:07&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Skipped&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;03_embedded_test.py::test_05_create_plain_client&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:07&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;(&amp;#x27;C:\\\\Users\\\\User\\\\selenium_project\\\\PyTestBasics\\\\03_embedded_test.py&amp;#x27;, 292, &amp;quot;Skipped: Plain client &amp;#x27;Automated Plain&amp;#x27; already exists \u2014 reused, not recreated.&amp;quot;)\n&#34;}], &#34;03_embedded_test.py::test_06_plain_client_has_no_embed_params&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;03_embedded_test.py::test_06_plain_client_has_no_embed_params&#34;, &#34;duration&#34;: &#34;00:00:08&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;03_embedded_test.py::test_06_plain_client_has_no_embed_params&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:08&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2705 Plain client opened without embed parameters: {&amp;#x27;organizationId&amp;#x27;: &amp;#x27;689486e0b03abd51eb5b44ec&amp;#x27;, &amp;#x27;organizationName&amp;#x27;: &amp;#x27;Organization ID: 689486e0b03abd51eb5b44ec&amp;#x27;, &amp;#x27;clientId&amp;#x27;: &amp;#x27;6aa82458b8996777fdd48ac5&amp;#x27;, &amp;#x27;clientName&amp;#x27;: &amp;#x27;Automated Plain&amp;#x27;}\n&#34;}], &#34;03_embedded_test.py::test_07_embedded_client_appends_query_params&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;03_embedded_test.py::test_07_embedded_client_appends_query_params&#34;, &#34;duration&#34;: &#34;00:00:11&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;03_embedded_test.py::test_07_embedded_client_appends_query_params&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:11&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2705 Embedded mode entered with embbedPortalId=&amp;#x27;6aa824434c54712d098781a1&amp;#x27;\n&#34;}], &#34;03_embedded_test.py::test_08_enter_embedded_mode&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;03_embedded_test.py::test_08_enter_embedded_mode&#34;, &#34;duration&#34;: &#34;00:00:04&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;03_embedded_test.py::test_08_enter_embedded_mode&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:04&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2705 Embedded session list open for portal 6aa824434c54712d098781a1\n&#34;}], &#34;03_embedded_test.py::test_10_session_list_replaces_portal_list&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;03_embedded_test.py::test_10_session_list_replaces_portal_list&#34;, &#34;duration&#34;: &#34;00:00:05&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;03_embedded_test.py::test_10_session_list_replaces_portal_list&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:05&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2705 Session list rendered in place of the portal list.\n&#34;}], &#34;03_embedded_test.py::test_11_import_webcast_hidden&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;03_embedded_test.py::test_11_import_webcast_hidden&#34;, &#34;duration&#34;: &#34;00:00:05&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;03_embedded_test.py::test_11_import_webcast_hidden&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:05&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2705 Import Webcast hidden.\n&#34;}], &#34;03_embedded_test.py::test_12_create_portal_hidden_from_sidebar&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;03_embedded_test.py::test_12_create_portal_hidden_from_sidebar&#34;, &#34;duration&#34;: &#34;28 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;03_embedded_test.py::test_12_create_portal_hidden_from_sidebar&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;28 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2705 Create Portal hidden from the sidebar.\n&#34;}], &#34;03_embedded_test.py::test_13_only_create_new_webcast_offered&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;03_embedded_test.py::test_13_only_create_new_webcast_offered&#34;, &#34;duration&#34;: &#34;00:00:05&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;03_embedded_test.py::test_13_only_create_new_webcast_offered&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:05&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2705 Only &amp;#x27;Create New Webcast&amp;#x27; offered.\n&#34;}], &#34;03_embedded_test.py::test_14_lenos_integration_hidden&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;03_embedded_test.py::test_14_lenos_integration_hidden&#34;, &#34;duration&#34;: &#34;00:00:06&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;03_embedded_test.py::test_14_lenos_integration_hidden&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:06&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2705 LENOS integration field hidden.\n&#34;}], &#34;03_embedded_test.py::test_15_create_embedded_session&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Skipped&#34;, &#34;testId&#34;: &#34;03_embedded_test.py::test_15_create_embedded_session&#34;, &#34;duration&#34;: &#34;759 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Skipped&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;03_embedded_test.py::test_15_create_embedded_session&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;759 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;(&amp;#x27;C:\\\\Users\\\\User\\\\selenium_project\\\\PyTestBasics\\\\03_embedded_test.py&amp;#x27;, 452, &amp;#x27;Skipped: The embedded client already has a session \u2014 reused, none created.&amp;#x27;)\n&#34;}], &#34;03_embedded_test.py::test_16_fall_back_to_a_portal_with_sessions&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;03_embedded_test.py::test_16_fall_back_to_a_portal_with_sessions&#34;, &#34;duration&#34;: &#34;00:00:03&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;03_embedded_test.py::test_16_fall_back_to_a_portal_with_sessions&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:03&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2705 Falling back to portal 68dbad0dd54a6a17a379995d (10 sessions) for the modal cases.\n&#34;}], &#34;03_embedded_test.py::test_17_manage_view_is_restricted&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;03_embedded_test.py::test_17_manage_view_is_restricted&#34;, &#34;duration&#34;: &#34;00:00:16&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;03_embedded_test.py::test_17_manage_view_is_restricted&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:16&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n  Manage tabs in embedded mode: [&amp;#x27;WEBCAST DETAILS&amp;#x27;, &amp;#x27;CONTENT&amp;#x27;, &amp;#x27;LANGUAGE &amp;amp; ECDN&amp;#x27;, &amp;#x27;STREAMING URLS&amp;#x27;, &amp;#x27;EMBED CODE&amp;#x27;]\n  Webcast type in embedded mode: &amp;#x27;Video only&amp;#x27;, options [&amp;#x27;Video only&amp;#x27;]\n&#34;}], &#34;03_embedded_test.py::test_18_embed_button_on_every_row&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;03_embedded_test.py::test_18_embed_button_on_every_row&#34;, &#34;duration&#34;: &#34;265 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;03_embedded_test.py::test_18_embed_button_on_every_row&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;265 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2705 Embed icon present on all 10 session rows.\n&#34;}], &#34;03_embedded_test.py::test_19_embed_button_absent_outside_embedded_mode&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;03_embedded_test.py::test_19_embed_button_absent_outside_embedded_mode&#34;, &#34;duration&#34;: &#34;00:00:36&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;03_embedded_test.py::test_19_embed_button_absent_outside_embedded_mode&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:36&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2705 Embed icon absent outside embedded mode.\n&#34;}], &#34;03_embedded_test.py::test_20_modal_opens_from_row&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;03_embedded_test.py::test_20_modal_opens_from_row&#34;, &#34;duration&#34;: &#34;00:00:08&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;03_embedded_test.py::test_20_modal_opens_from_row&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:08&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2705 Embed Session modal opens with title, snippet, format toggle and advanced switch.\n&#34;}], &#34;03_embedded_test.py::test_21_default_snippet&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;03_embedded_test.py::test_21_default_snippet&#34;, &#34;duration&#34;: &#34;00:00:06&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;03_embedded_test.py::test_21_default_snippet&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:06&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2705 Default snippet matches the documented attributes.\n&#34;}], &#34;03_embedded_test.py::test_22_embed_url&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;03_embedded_test.py::test_22_embed_url&#34;, &#34;duration&#34;: &#34;00:00:06&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;03_embedded_test.py::test_22_embed_url&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:06&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2705 Embed URL: https://connectstudio-portal-dev.world-television.com/68dbad0dd54a6a17a379995d/session/6aa7f69eb346c75bde7eeb2a?isNewSession=true\n&#34;}], &#34;03_embedded_test.py::test_23_jsx_format&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;03_embedded_test.py::test_23_jsx_format&#34;, &#34;duration&#34;: &#34;00:00:06&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;03_embedded_test.py::test_23_jsx_format&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:06&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2705 JSX output uses JSX attribute names and a style object.\n&#34;}], &#34;03_embedded_test.py::test_24_back_to_html_format&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;03_embedded_test.py::test_24_back_to_html_format&#34;, &#34;duration&#34;: &#34;00:00:07&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;03_embedded_test.py::test_24_back_to_html_format&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:07&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2705 HTML output restored.\n&#34;}], &#34;03_embedded_test.py::test_25_advanced_switch_reveals_options&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;03_embedded_test.py::test_25_advanced_switch_reveals_options&#34;, &#34;duration&#34;: &#34;00:00:16&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;03_embedded_test.py::test_25_advanced_switch_reveals_options&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:16&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2705 Advanced config reveals the full option set.\n&#34;}], &#34;03_embedded_test.py::test_26_custom_width_and_height&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;03_embedded_test.py::test_26_custom_width_and_height&#34;, &#34;duration&#34;: &#34;00:00:14&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;03_embedded_test.py::test_26_custom_width_and_height&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:14&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2705 Custom width and height applied.\n&#34;}], &#34;03_embedded_test.py::test_27_size_units_switch&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;03_embedded_test.py::test_27_size_units_switch&#34;, &#34;duration&#34;: &#34;00:00:14&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;03_embedded_test.py::test_27_size_units_switch&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:14&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2705 Width and height units switch between px and %.\n&#34;}], &#34;03_embedded_test.py::test_28_size_cannot_go_below_one&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;03_embedded_test.py::test_28_size_cannot_go_below_one&#34;, &#34;duration&#34;: &#34;00:00:13&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;03_embedded_test.py::test_28_size_cannot_go_below_one&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:13&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2705 Width clamped to &amp;#x27;1px&amp;#x27; rather than 0.\n&#34;}], &#34;03_embedded_test.py::test_29_responsive_wraps_the_iframe&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;03_embedded_test.py::test_29_responsive_wraps_the_iframe&#34;, &#34;duration&#34;: &#34;00:00:17&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;03_embedded_test.py::test_29_responsive_wraps_the_iframe&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:17&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2705 Responsive mode wraps the iframe in a positioned container.\n&#34;}], &#34;03_embedded_test.py::test_30_aspect_ratio_options&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;03_embedded_test.py::test_30_aspect_ratio_options&#34;, &#34;duration&#34;: &#34;00:00:16&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;03_embedded_test.py::test_30_aspect_ratio_options&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:16&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2705 All four aspect ratios applied.\n&#34;}], &#34;03_embedded_test.py::test_31_permissions_drive_the_allow_attribute&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;03_embedded_test.py::test_31_permissions_drive_the_allow_attribute&#34;, &#34;duration&#34;: &#34;00:00:12&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;03_embedded_test.py::test_31_permissions_drive_the_allow_attribute&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:12&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2705 Permission checkboxes drive the allow attribute.\n&#34;}], &#34;03_embedded_test.py::test_32_unticking_fullscreen_removes_allowfullscreen&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;03_embedded_test.py::test_32_unticking_fullscreen_removes_allowfullscreen&#34;, &#34;duration&#34;: &#34;00:00:12&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;03_embedded_test.py::test_32_unticking_fullscreen_removes_allowfullscreen&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:12&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2705 Unticking Fullscreen drops both allowfullscreen and the allow entry.\n&#34;}], &#34;03_embedded_test.py::test_33_clearing_every_permission&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;03_embedded_test.py::test_33_clearing_every_permission&#34;, &#34;duration&#34;: &#34;00:00:13&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;03_embedded_test.py::test_33_clearing_every_permission&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:13&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2705 Clearing every permission omits the allow attribute.\n&#34;}], &#34;03_embedded_test.py::test_34_border_radius&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;03_embedded_test.py::test_34_border_radius&#34;, &#34;duration&#34;: &#34;00:00:12&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;03_embedded_test.py::test_34_border_radius&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:12&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2705 Border radius applied.\n&#34;}], &#34;03_embedded_test.py::test_35_border_radius_bounds&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;03_embedded_test.py::test_35_border_radius_bounds&#34;, &#34;duration&#34;: &#34;00:00:12&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;03_embedded_test.py::test_35_border_radius_bounds&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:12&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2705 Border radius bounded at 0\u2013200.\n&#34;}], &#34;03_embedded_test.py::test_36_loading_options&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;03_embedded_test.py::test_36_loading_options&#34;, &#34;duration&#34;: &#34;00:00:13&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;03_embedded_test.py::test_36_loading_options&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:13&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2705 Loading options applied.\n&#34;}], &#34;03_embedded_test.py::test_37_referrer_policy_options&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;03_embedded_test.py::test_37_referrer_policy_options&#34;, &#34;duration&#34;: &#34;00:00:14&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;03_embedded_test.py::test_37_referrer_policy_options&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:14&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2705 Referrer policy options applied.\n&#34;}], &#34;03_embedded_test.py::test_38_accessible_title&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;03_embedded_test.py::test_38_accessible_title&#34;, &#34;duration&#34;: &#34;00:00:12&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;03_embedded_test.py::test_38_accessible_title&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:12&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2705 Accessible title applied.\n&#34;}], &#34;03_embedded_test.py::test_39_title_special_characters_are_escaped&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;03_embedded_test.py::test_39_title_special_characters_are_escaped&#34;, &#34;duration&#34;: &#34;00:00:12&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;03_embedded_test.py::test_39_title_special_characters_are_escaped&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:12&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2705 Special characters in the title are escaped.\n&#34;}], &#34;03_embedded_test.py::test_40_copy_embed_code&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Skipped&#34;, &#34;testId&#34;: &#34;03_embedded_test.py::test_40_copy_embed_code&#34;, &#34;duration&#34;: &#34;00:00:08&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Skipped&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;03_embedded_test.py::test_40_copy_embed_code&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:08&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;(&amp;#x27;C:\\\\Users\\\\User\\\\selenium_project\\\\PyTestBasics\\\\03_embedded_test.py&amp;#x27;, 895, &amp;#x27;Skipped: No toast appeared after Copy: navigator.clipboard stays pending while the browser window is unfocused. Re-run with the window in the foreground.&amp;#x27;)\n&#34;}], &#34;03_embedded_test.py::test_41_config_resets_on_close&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;03_embedded_test.py::test_41_config_resets_on_close&#34;, &#34;duration&#34;: &#34;00:00:18&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;03_embedded_test.py::test_41_config_resets_on_close&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:18&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2705 Config resets when the modal closes.\n&#34;}], &#34;03_embedded_test.py::test_42_mask_does_not_dismiss&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;03_embedded_test.py::test_42_mask_does_not_dismiss&#34;, &#34;duration&#34;: &#34;00:00:07&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;03_embedded_test.py::test_42_mask_does_not_dismiss&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:07&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2705 Modal survives a mask click.\n&#34;}], &#34;03_embedded_test.py::test_43_snippet_is_read_only&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;03_embedded_test.py::test_43_snippet_is_read_only&#34;, &#34;duration&#34;: &#34;00:00:06&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;03_embedded_test.py::test_43_snippet_is_read_only&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:06&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2705 Embed code area is read-only.\n&#34;}], &#34;03_embedded_test.py::test_44_embed_icon_on_the_row&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;03_embedded_test.py::test_44_embed_icon_on_the_row&#34;, &#34;duration&#34;: &#34;45 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;03_embedded_test.py::test_44_embed_icon_on_the_row&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;45 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2705 Embed icon rendered beside Delete.\n&#34;}], &#34;03_embedded_test.py::test_45_modal_on_a_narrow_viewport&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;03_embedded_test.py::test_45_modal_on_a_narrow_viewport&#34;, &#34;duration&#34;: &#34;00:00:03&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;03_embedded_test.py::test_45_modal_on_a_narrow_viewport&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:03&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n  Modal box at 502px viewport: {&amp;#x27;left&amp;#x27;: 0, &amp;#x27;right&amp;#x27;: 487.3999938964844, &amp;#x27;width&amp;#x27;: 487.3999938964844}\n\u2705 Modal usable at 420px width.\n&#34;}], &#34;04_language_test.py::test_01_login&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;04_language_test.py::test_01_login&#34;, &#34;duration&#34;: &#34;00:00:33&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;04_language_test.py::test_01_login&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:33&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\nPASS: Logged in: Welcome to\n&#34;}], &#34;04_language_test.py::test_02_open_client_list_and_snapshot_baseline&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;04_language_test.py::test_02_open_client_list_and_snapshot_baseline&#34;, &#34;duration&#34;: &#34;00:00:18&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;04_language_test.py::test_02_open_client_list_and_snapshot_baseline&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:18&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\nPASS: Client list for organization &amp;#x27;Automated Test ORG&amp;#x27;: https://connectstudio-admin-dev.world-television.com/organization/client?organizationId=689486e0b03abd51eb5b44ec&amp;amp;organizationName=Automated%20Test%20ORG\n   Baseline - 8 existing client(s), all protected\n&#34;}], &#34;04_language_test.py::test_03_client_language_dropdown_lists_every_language&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Failed&#34;, &#34;testId&#34;: &#34;04_language_test.py::test_03_client_language_dropdown_lists_every_language&#34;, &#34;duration&#34;: &#34;00:00:09&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Failed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;04_language_test.py::test_03_client_language_dropdown_lists_every_language&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:09&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;driver = &amp;lt;selenium.webdriver.chrome.webdriver.WebDriver (session=&amp;quot;a1bb44f6733407e9bf0a965838a30264&amp;quot;)&amp;gt;\n\n    @pytest.mark.testrail(886)\n    def test_03_client_language_dropdown_lists_every_language(driver):\n        &amp;quot;&amp;quot;&amp;quot;C886 - the client Language dropdown offers the full DefaultLanguages set.&amp;quot;&amp;quot;&amp;quot;\n        _open_add_client_modal(driver)\n        _open_select(driver, f&amp;quot;{MODAL}//div[contains(@class,&amp;#x27;ant-select&amp;#x27;)]&amp;quot;\n                             f&amp;quot;[.//span[normalize-space()=&amp;#x27;Select Language&amp;#x27;]]&amp;quot;)\n        options = _dropdown_options(driver)\n        _close_dropdown(driver)\n    \n        missing = [name for name in CLIENT_LANGUAGES if name not in options]\n        unexpected = [name for name in options if name not in CLIENT_LANGUAGES]\n&amp;gt;       assert not missing, f&amp;quot;Languages missing from the client dropdown: {missing} (saw {options})&amp;quot;\nE       AssertionError: Languages missing from the client dropdown: [&amp;#x27;Portuguese&amp;#x27;, &amp;#x27;Japanese&amp;#x27;, &amp;#x27;Simplified Chinese&amp;#x27;, &amp;#x27;Traditional Chinese&amp;#x27;] (saw [&amp;#x27;English&amp;#x27;, &amp;#x27;Spanish&amp;#x27;, &amp;#x27;German&amp;#x27;, &amp;#x27;Italian&amp;#x27;, &amp;#x27;French&amp;#x27;, &amp;#x27;Swedish&amp;#x27;, &amp;#x27;Danish&amp;#x27;, &amp;#x27;Finish&amp;#x27;])\nE       assert not [&amp;#x27;Portuguese&amp;#x27;, &amp;#x27;Japanese&amp;#x27;, &amp;#x27;Simplified Chinese&amp;#x27;, &amp;#x27;Traditional Chinese&amp;#x27;]\n\n04_language_test.py:538: AssertionError\n&#34;}], &#34;04_language_test.py::test_04_client_language_is_required&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;04_language_test.py::test_04_client_language_is_required&#34;, &#34;duration&#34;: &#34;584 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;04_language_test.py::test_04_client_language_is_required&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;584 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\nPASS: Empty language blocked with &amp;#x27;Language is required&amp;#x27;\n&#34;}], &#34;04_language_test.py::test_05_create_client_with_non_english_default&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Failed&#34;, &#34;testId&#34;: &#34;04_language_test.py::test_05_create_client_with_non_english_default&#34;, &#34;duration&#34;: &#34;00:00:23&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Failed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;04_language_test.py::test_05_create_client_with_non_english_default&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:23&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;driver = &amp;lt;selenium.webdriver.chrome.webdriver.WebDriver (session=&amp;quot;a1bb44f6733407e9bf0a965838a30264&amp;quot;)&amp;gt;\n\n    @pytest.mark.testrail(888, 889)\n    def test_05_create_client_with_non_english_default(driver):\n        &amp;quot;&amp;quot;&amp;quot;C888/C889 - create a client whose default language is not English.&amp;quot;&amp;quot;&amp;quot;\n        _open_add_client_modal(driver)\n    \n        # C889 - the note that scopes the language to the portal, not the admin UI.\n        note = _wait(driver).until(EC.presence_of_element_located(\n            (By.XPATH, f&amp;quot;{MODAL}//p[contains(@class,&amp;#x27;note&amp;#x27;)]&amp;quot;)\n        )).text.lower()\n        assert &amp;quot;portal&amp;quot; in note and &amp;quot;admin&amp;quot; in note, f&amp;quot;Scope note missing or reworded: {note!r}&amp;quot;\n    \n        name_field = _client_name_input(driver)\n        name_field.clear()\n        name_field.send_keys(CLIENT_NAME)\n        chosen = _pick_antd_option(driver, &amp;quot;Select Language&amp;quot;, DEFAULT_LANGUAGE, scope=MODAL)\n        assert chosen == DEFAULT_LANGUAGE\n    \n        save = _wait(driver).until(EC.element_to_be_clickable(\n            (By.XPATH, f&amp;quot;{MODAL}//button[contains(@class,&amp;#x27;custom-save-btn&amp;#x27;)]&amp;quot;)\n        ))\n        _click(driver, save)\n    \n        # The toast auto-dismisses in ~3s and errors share its container, so assert\n        # on the text rather than on the popup merely existing.\n        toast = _wait(driver, 20).until(EC.presence_of_element_located(\n            (By.CSS_SELECTOR, &amp;quot;.swal2-container&amp;quot;)\n        )).text.strip()\n        assert &amp;quot;success&amp;quot; in toast.lower(), f&amp;quot;Client create did not succeed: {toast!r}&amp;quot;\n    \n        _close_add_client_modal(driver)\n        _open_client_list(driver)\n        _search_client_list(driver, CLIENT_NAME)\n&amp;gt;       assert CLIENT_NAME in _client_names(driver), (\n            f&amp;quot;&amp;#x27;{CLIENT_NAME}&amp;#x27; is not on the client list after creation&amp;quot;\n        )\nE       AssertionError: &amp;#x27;Automated Lang Client baf94b&amp;#x27; is not on the client list after creation\nE       assert &amp;#x27;Automated Lang Client baf94b&amp;#x27; in []\nE        +  where [] = _client_names(&amp;lt;selenium.webdriver.chrome.webdriver.WebDriver (session=&amp;quot;a1bb44f6733407e9bf0a965838a30264&amp;quot;)&amp;gt;)\n\n04_language_test.py:596: AssertionError\n&#34;}], &#34;04_language_test.py::test_06_portal_default_language_cascades_and_is_read_only&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Failed&#34;, &#34;testId&#34;: &#34;04_language_test.py::test_06_portal_default_language_cascades_and_is_read_only&#34;, &#34;duration&#34;: &#34;00:01:31&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Failed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;04_language_test.py::test_06_portal_default_language_cascades_and_is_read_only&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:01:31&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;driver = &amp;lt;selenium.webdriver.chrome.webdriver.WebDriver (session=&amp;quot;a1bb44f6733407e9bf0a965838a30264&amp;quot;)&amp;gt;\n\n    @pytest.mark.testrail(890, 891)\n    def test_06_portal_default_language_cascades_and_is_read_only(driver):\n        &amp;quot;&amp;quot;&amp;quot;C890/C891 - Branding shows the client&amp;#x27;s language, read-only.&amp;quot;&amp;quot;&amp;quot;\n        create_btn = _wait(driver).until(EC.presence_of_element_located(\n            (By.XPATH, &amp;quot;//div[normalize-space()=&amp;#x27;Create Portal&amp;#x27;]&amp;quot;)\n        ))\n        _click(driver, create_btn)\n        _wait(driver).until(EC.url_contains(&amp;quot;/new/branding&amp;quot;))\n        time.sleep(3)\n    \n        # The organization select only renders for ADMIN / SUPER_ADMIN.\n        if driver.find_elements(\n            By.XPATH,\n            &amp;quot;//div[contains(@class,&amp;#x27;ant-select&amp;#x27;)][.//span[normalize-space()=&amp;#x27;Select organization&amp;#x27;]]&amp;quot;,\n        ):\n            _pick_antd_option(driver, &amp;quot;Select organization&amp;quot;, os.getenv(&amp;quot;LANG_ORG&amp;quot;) or CONTEXT[&amp;quot;org&amp;quot;])\n            time.sleep(3)\n&amp;gt;       _pick_antd_option(driver, &amp;quot;Select client&amp;quot;, CLIENT_NAME)\n\n04_language_test.py:619: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _\n04_language_test.py:293: in _pick_antd_option\n    _choose_option(driver, wanted)\n04_language_test.py:253: in _choose_option\n    option = _wait(driver).until(EC.presence_of_element_located((By.XPATH, xpath)))\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _\n\nself = &amp;lt;selenium.webdriver.support.wait.WebDriverWait (session=&amp;quot;a1bb44f6733407e9bf0a965838a30264&amp;quot;)&amp;gt;\nmethod = &amp;lt;function presence_of_element_located.&amp;lt;locals&amp;gt;._predicate at 0x000002003216B3D0&amp;gt;\nmessage = &amp;#x27;&amp;#x27;\n\n    def until(self, method: Callable[[D], Union[Literal[False], T]], message: str = &amp;quot;&amp;quot;) -&amp;gt; T:\n        &amp;quot;&amp;quot;&amp;quot;Wait until the method returns a value that is not False.\n    \n        Calls the method provided with the driver as an argument until the\n        return value does not evaluate to ``False``.\n    \n        Parameters:\n        -----------\n        method: callable(WebDriver)\n            - A callable object that takes a WebDriver instance as an argument.\n    \n        message: str\n            - Optional message for :exc:`TimeoutException`\n    \n        Return:\n        -------\n        object: T\n            - The result of the last call to `method`\n    \n        Raises:\n        -------\n        TimeoutException\n            - If &amp;#x27;method&amp;#x27; does not return a truthy value within the WebDriverWait\n            object&amp;#x27;s timeout\n    \n        Example:\n        --------\n        &amp;gt;&amp;gt;&amp;gt; from selenium.webdriver.common.by import By\n        &amp;gt;&amp;gt;&amp;gt; from selenium.webdriver.support.ui import WebDriverWait\n        &amp;gt;&amp;gt;&amp;gt; from selenium.webdriver.support import expected_conditions as EC\n    \n        # Wait until an element is visible on the page\n        &amp;gt;&amp;gt;&amp;gt; wait = WebDriverWait(driver, 10)\n        &amp;gt;&amp;gt;&amp;gt; element = wait.until(EC.visibility_of_element_located((By.ID, &amp;quot;exampleId&amp;quot;)))\n        &amp;gt;&amp;gt;&amp;gt; print(element.text)\n        &amp;quot;&amp;quot;&amp;quot;\n        screen = None\n        stacktrace = None\n    \n        end_time = time.monotonic() + self._timeout\n        while True:\n            try:\n                value = method(self._driver)\n                if value:\n                    return value\n            except self._ignored_exceptions as exc:\n                screen = getattr(exc, &amp;quot;screen&amp;quot;, None)\n                stacktrace = getattr(exc, &amp;quot;stacktrace&amp;quot;, None)\n            if time.monotonic() &amp;gt; end_time:\n                break\n            time.sleep(self._poll)\n&amp;gt;       raise TimeoutException(message, screen, stacktrace)\nE       selenium.common.exceptions.TimeoutException: Message: \nE       Stacktrace:\nE       \tchromedriver!GetHandleVerifier [0x7ff6773a9d55+5a55]\nE       \tchromedriver!(No symbol) [0x7ff6772cf540]\nE       \tchromedriver!(No symbol) [0x7ff6770f45fd]\nE       \tchromedriver!(No symbol) [0x7ff67714fca1]\nE       \tchromedriver!(No symbol) [0x7ff67714ff6c]\nE       \tchromedriver!(No symbol) [0x7ff6771a3077]\nE       \tchromedriver!(No symbol) [0x7ff67719fcd9]\nE       \tchromedriver!(No symbol) [0x7ff677141a12]\nE       \tchromedriver!(No symbol) [0x7ff677142823]\nE       \tchromedriver!GetHandleVerifier [0x7ff6777c04b1+41c1b1]\nE       \tchromedriver!GetHandleVerifier [0x7ff6777ee26b+449f6b]\nE       \tchromedriver!GetHandleVerifier [0x7ff6777e274e+43e44e]\nE       \tchromedriver!GetHandleVerifier [0x7ff6774a32fe+feffe]\nE       \tchromedriver!(No symbol) [0x7ff6772dcb55]\nE       \tchromedriver!(No symbol) [0x7ff6772d7f64]\nE       \tchromedriver!(No symbol) [0x7ff6772d80f4]\nE       \tchromedriver!(No symbol) [0x7ff6772c2e4c]\nE       \tKERNEL32!BaseThreadInitThunk [0x7ffb6c3fcdf7+17]\nE       \tntdll!RtlUserThreadStart [0x7ffb6d7bee4c+2c]\n\n..\\venv\\Lib\\site-packages\\selenium\\webdriver\\support\\wait.py:138: TimeoutException\n&#34;}], &#34;04_language_test.py::test_07_additional_dropdown_excludes_the_default_language&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Failed&#34;, &#34;testId&#34;: &#34;04_language_test.py::test_07_additional_dropdown_excludes_the_default_language&#34;, &#34;duration&#34;: &#34;00:00:02&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Failed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;04_language_test.py::test_07_additional_dropdown_excludes_the_default_language&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:02&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;driver = &amp;lt;selenium.webdriver.chrome.webdriver.WebDriver (session=&amp;quot;a1bb44f6733407e9bf0a965838a30264&amp;quot;)&amp;gt;\n\n    @pytest.mark.testrail(892)\n    def test_07_additional_dropdown_excludes_the_default_language(driver):\n        &amp;quot;&amp;quot;&amp;quot;C892 - every supported language is offered except the default one.&amp;quot;&amp;quot;&amp;quot;\n&amp;gt;       _open_select(driver, ADDITIONAL_LANGUAGE_SELECT)\n\n04_language_test.py:634: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _\n04_language_test.py:204: in _open_select\n    container.find_element(By.CSS_SELECTOR, &amp;quot;.ant-select-selector&amp;quot;).click()\n..\\venv\\Lib\\site-packages\\selenium\\webdriver\\remote\\webelement.py:119: in click\n    self._execute(Command.CLICK_ELEMENT)\n..\\venv\\Lib\\site-packages\\selenium\\webdriver\\remote\\webelement.py:572: in _execute\n    return self._parent.execute(command, params)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n..\\venv\\Lib\\site-packages\\selenium\\webdriver\\remote\\webdriver.py:458: in execute\n    self.error_handler.check_response(response)\n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _\n\nself = &amp;lt;selenium.webdriver.remote.errorhandler.ErrorHandler object at 0x000002003204F950&amp;gt;\nresponse = {&amp;#x27;status&amp;#x27;: 400, &amp;#x27;value&amp;#x27;: &amp;#x27;{&amp;quot;value&amp;quot;:{&amp;quot;error&amp;quot;:&amp;quot;element click intercepted&amp;quot;,&amp;quot;message&amp;quot;:&amp;quot;element click intercepted: Element ...2c2e4c]\\\\n\\\\tKERNEL32!BaseThreadInitThunk [0x7ffb6c3fcdf7+17]\\\\n\\\\tntdll!RtlUserThreadStart [0x7ffb6d7bee4c+2c]\\\\n&amp;quot;}}&amp;#x27;}\n\n    def check_response(self, response: dict[str, Any]) -&amp;gt; None:\n        &amp;quot;&amp;quot;&amp;quot;Checks that a JSON response from the WebDriver does not have an\n        error.\n    \n        :Args:\n         - response - The JSON response from the WebDriver server as a dictionary\n           object.\n    \n        :Raises: If the response contains an error message.\n        &amp;quot;&amp;quot;&amp;quot;\n        status = response.get(&amp;quot;status&amp;quot;, None)\n        if not status or status == ErrorCode.SUCCESS:\n            return\n        value = None\n        message = response.get(&amp;quot;message&amp;quot;, &amp;quot;&amp;quot;)\n        screen: str = response.get(&amp;quot;screen&amp;quot;, &amp;quot;&amp;quot;)\n        stacktrace = None\n        if isinstance(status, int):\n            value_json = response.get(&amp;quot;value&amp;quot;, None)\n            if value_json and isinstance(value_json, str):\n                try:\n                    value = json.loads(value_json)\n                    if isinstance(value, dict):\n                        if len(value) == 1:\n                            value = value[&amp;quot;value&amp;quot;]\n                        status = value.get(&amp;quot;error&amp;quot;, None)\n                        if not status:\n                            status = value.get(&amp;quot;status&amp;quot;, ErrorCode.UNKNOWN_ERROR)\n                            message = value.get(&amp;quot;value&amp;quot;) or value.get(&amp;quot;message&amp;quot;)\n                            if not isinstance(message, str):\n                                value = message\n                                message = message.get(&amp;quot;message&amp;quot;) if isinstance(message, dict) else None\n                        else:\n                            message = value.get(&amp;quot;message&amp;quot;, None)\n                except ValueError:\n                    pass\n    \n        exception_class: type[WebDriverException]\n        e = ErrorCode()\n        error_codes = [item for item in dir(e) if not item.startswith(&amp;quot;__&amp;quot;)]\n        for error_code in error_codes:\n            error_info = getattr(ErrorCode, error_code)\n            if isinstance(error_info, list) and status in error_info:\n                exception_class = getattr(ExceptionMapping, error_code, WebDriverException)\n                break\n        else:\n            exception_class = WebDriverException\n    \n        if not value:\n            value = response[&amp;quot;value&amp;quot;]\n        if isinstance(value, str):\n            raise exception_class(value)\n        if message == &amp;quot;&amp;quot; and &amp;quot;message&amp;quot; in value:\n            message = value[&amp;quot;message&amp;quot;]\n    \n        screen = None  # type: ignore[assignment]\n        if &amp;quot;screen&amp;quot; in value:\n            screen = value[&amp;quot;screen&amp;quot;]\n    \n        stacktrace = None\n        st_value = value.get(&amp;quot;stackTrace&amp;quot;) or value.get(&amp;quot;stacktrace&amp;quot;)\n        if st_value:\n            if isinstance(st_value, str):\n                stacktrace = st_value.split(&amp;quot;\\n&amp;quot;)\n            else:\n                stacktrace = []\n                try:\n                    for frame in st_value:\n                        line = frame.get(&amp;quot;lineNumber&amp;quot;, &amp;quot;&amp;quot;)\n                        file = frame.get(&amp;quot;fileName&amp;quot;, &amp;quot;&amp;lt;anonymous&amp;gt;&amp;quot;)\n                        if line:\n                            file = f&amp;quot;{file}:{line}&amp;quot;\n                        meth = frame.get(&amp;quot;methodName&amp;quot;, &amp;quot;&amp;lt;anonymous&amp;gt;&amp;quot;)\n                        if &amp;quot;className&amp;quot; in frame:\n                            meth = f&amp;quot;{frame[&amp;#x27;className&amp;#x27;]}.{meth}&amp;quot;\n                        msg = &amp;quot;    at %s (%s)&amp;quot;\n                        msg = msg % (meth, file)\n                        stacktrace.append(msg)\n                except TypeError:\n                    pass\n        if exception_class == UnexpectedAlertPresentException:\n            alert_text = None\n            if &amp;quot;data&amp;quot; in value:\n                alert_text = value[&amp;quot;data&amp;quot;].get(&amp;quot;text&amp;quot;)\n            elif &amp;quot;alert&amp;quot; in value:\n                alert_text = value[&amp;quot;alert&amp;quot;].get(&amp;quot;text&amp;quot;)\n            raise exception_class(message, screen, stacktrace, alert_text)  # type: ignore[call-arg]  # mypy is not smart enough here\n&amp;gt;       raise exception_class(message, screen, stacktrace)\nE       selenium.common.exceptions.ElementClickInterceptedException: Message: element click intercepted: Element &amp;lt;div class=&amp;quot;ant-select-selector&amp;quot;&amp;gt;...&amp;lt;/div&amp;gt; is not clickable at point (712, 450). Other element would receive the click: &amp;lt;div class=&amp;quot;ant-select-item-option-content&amp;quot;&amp;gt;...&amp;lt;/div&amp;gt;\nE         (Session info: chrome=154.0.8037.98); For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors#elementclickinterceptedexception\nE       Stacktrace:\nE       \tchromedriver!GetHandleVerifier [0x7ff6773a9d55+5a55]\nE       \tchromedriver!(No symbol) [0x7ff6772cf540]\nE       \tchromedriver!(No symbol) [0x7ff6770f45fd]\nE       \tchromedriver!(No symbol) [0x7ff677157a73]\nE       \tchromedriver!(No symbol) [0x7ff67715567a]\nE       \tchromedriver!(No symbol) [0x7ff6771529b7]\nE       \tchromedriver!(No symbol) [0x7ff677151880]\nE       \tchromedriver!(No symbol) [0x7ff677143828]\nE       \tchromedriver!(No symbol) [0x7ff6771790ea]\nE       \tchromedriver!(No symbol) [0x7ff6771430a6]\nE       \tchromedriver!(No symbol) [0x7ff67719fcd9]\nE       \tchromedriver!(No symbol) [0x7ff677141a12]\nE       \tchromedriver!(No symbol) [0x7ff677142823]\nE       \tchromedriver!GetHandleVerifier [0x7ff6777c04b1+41c1b1]\nE       \tchromedriver!GetHandleVerifier [0x7ff6777ee26b+449f6b]\nE       \tchromedriver!GetHandleVerifier [0x7ff6777e274e+43e44e]\nE       \tchromedriver!GetHandleVerifier [0x7ff6774a32fe+feffe]\nE       \tchromedriver!(No symbol) [0x7ff6772dcb55]\nE       \tchromedriver!(No symbol) [0x7ff6772d7f64]\nE       \tchromedriver!(No symbol) [0x7ff6772d80f4]\nE       \tchromedriver!(No symbol) [0x7ff6772c2e4c]\nE       \tKERNEL32!BaseThreadInitThunk [0x7ffb6c3fcdf7+17]\nE       \tntdll!RtlUserThreadStart [0x7ffb6d7bee4c+2c]\n\n..\\venv\\Lib\\site-packages\\selenium\\webdriver\\remote\\errorhandler.py:232: ElementClickInterceptedException\n&#34;}], &#34;04_language_test.py::test_08_select_multiple_additional_languages&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Failed&#34;, &#34;testId&#34;: &#34;04_language_test.py::test_08_select_multiple_additional_languages&#34;, &#34;duration&#34;: &#34;00:00:02&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Failed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;04_language_test.py::test_08_select_multiple_additional_languages&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:02&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;driver = &amp;lt;selenium.webdriver.chrome.webdriver.WebDriver (session=&amp;quot;a1bb44f6733407e9bf0a965838a30264&amp;quot;)&amp;gt;\n\n    @pytest.mark.testrail(893)\n    def test_08_select_multiple_additional_languages(driver):\n        &amp;quot;&amp;quot;&amp;quot;C893 - the additional-language control is multi-select and shows tags.&amp;quot;&amp;quot;&amp;quot;\n&amp;gt;       _open_select(driver, ADDITIONAL_LANGUAGE_SELECT)\n\n04_language_test.py:651: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _\n04_language_test.py:204: in _open_select\n    container.find_element(By.CSS_SELECTOR, &amp;quot;.ant-select-selector&amp;quot;).click()\n..\\venv\\Lib\\site-packages\\selenium\\webdriver\\remote\\webelement.py:119: in click\n    self._execute(Command.CLICK_ELEMENT)\n..\\venv\\Lib\\site-packages\\selenium\\webdriver\\remote\\webelement.py:572: in _execute\n    return self._parent.execute(command, params)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n..\\venv\\Lib\\site-packages\\selenium\\webdriver\\remote\\webdriver.py:458: in execute\n    self.error_handler.check_response(response)\n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _\n\nself = &amp;lt;selenium.webdriver.remote.errorhandler.ErrorHandler object at 0x000002003204F950&amp;gt;\nresponse = {&amp;#x27;status&amp;#x27;: 400, &amp;#x27;value&amp;#x27;: &amp;#x27;{&amp;quot;value&amp;quot;:{&amp;quot;error&amp;quot;:&amp;quot;element click intercepted&amp;quot;,&amp;quot;message&amp;quot;:&amp;quot;element click intercepted: Element ...2c2e4c]\\\\n\\\\tKERNEL32!BaseThreadInitThunk [0x7ffb6c3fcdf7+17]\\\\n\\\\tntdll!RtlUserThreadStart [0x7ffb6d7bee4c+2c]\\\\n&amp;quot;}}&amp;#x27;}\n\n    def check_response(self, response: dict[str, Any]) -&amp;gt; None:\n        &amp;quot;&amp;quot;&amp;quot;Checks that a JSON response from the WebDriver does not have an\n        error.\n    \n        :Args:\n         - response - The JSON response from the WebDriver server as a dictionary\n           object.\n    \n        :Raises: If the response contains an error message.\n        &amp;quot;&amp;quot;&amp;quot;\n        status = response.get(&amp;quot;status&amp;quot;, None)\n        if not status or status == ErrorCode.SUCCESS:\n            return\n        value = None\n        message = response.get(&amp;quot;message&amp;quot;, &amp;quot;&amp;quot;)\n        screen: str = response.get(&amp;quot;screen&amp;quot;, &amp;quot;&amp;quot;)\n        stacktrace = None\n        if isinstance(status, int):\n            value_json = response.get(&amp;quot;value&amp;quot;, None)\n            if value_json and isinstance(value_json, str):\n                try:\n                    value = json.loads(value_json)\n                    if isinstance(value, dict):\n                        if len(value) == 1:\n                            value = value[&amp;quot;value&amp;quot;]\n                        status = value.get(&amp;quot;error&amp;quot;, None)\n                        if not status:\n                            status = value.get(&amp;quot;status&amp;quot;, ErrorCode.UNKNOWN_ERROR)\n                            message = value.get(&amp;quot;value&amp;quot;) or value.get(&amp;quot;message&amp;quot;)\n                            if not isinstance(message, str):\n                                value = message\n                                message = message.get(&amp;quot;message&amp;quot;) if isinstance(message, dict) else None\n                        else:\n                            message = value.get(&amp;quot;message&amp;quot;, None)\n                except ValueError:\n                    pass\n    \n        exception_class: type[WebDriverException]\n        e = ErrorCode()\n        error_codes = [item for item in dir(e) if not item.startswith(&amp;quot;__&amp;quot;)]\n        for error_code in error_codes:\n            error_info = getattr(ErrorCode, error_code)\n            if isinstance(error_info, list) and status in error_info:\n                exception_class = getattr(ExceptionMapping, error_code, WebDriverException)\n                break\n        else:\n            exception_class = WebDriverException\n    \n        if not value:\n            value = response[&amp;quot;value&amp;quot;]\n        if isinstance(value, str):\n            raise exception_class(value)\n        if message == &amp;quot;&amp;quot; and &amp;quot;message&amp;quot; in value:\n            message = value[&amp;quot;message&amp;quot;]\n    \n        screen = None  # type: ignore[assignment]\n        if &amp;quot;screen&amp;quot; in value:\n            screen = value[&amp;quot;screen&amp;quot;]\n    \n        stacktrace = None\n        st_value = value.get(&amp;quot;stackTrace&amp;quot;) or value.get(&amp;quot;stacktrace&amp;quot;)\n        if st_value:\n            if isinstance(st_value, str):\n                stacktrace = st_value.split(&amp;quot;\\n&amp;quot;)\n            else:\n                stacktrace = []\n                try:\n                    for frame in st_value:\n                        line = frame.get(&amp;quot;lineNumber&amp;quot;, &amp;quot;&amp;quot;)\n                        file = frame.get(&amp;quot;fileName&amp;quot;, &amp;quot;&amp;lt;anonymous&amp;gt;&amp;quot;)\n                        if line:\n                            file = f&amp;quot;{file}:{line}&amp;quot;\n                        meth = frame.get(&amp;quot;methodName&amp;quot;, &amp;quot;&amp;lt;anonymous&amp;gt;&amp;quot;)\n                        if &amp;quot;className&amp;quot; in frame:\n                            meth = f&amp;quot;{frame[&amp;#x27;className&amp;#x27;]}.{meth}&amp;quot;\n                        msg = &amp;quot;    at %s (%s)&amp;quot;\n                        msg = msg % (meth, file)\n                        stacktrace.append(msg)\n                except TypeError:\n                    pass\n        if exception_class == UnexpectedAlertPresentException:\n            alert_text = None\n            if &amp;quot;data&amp;quot; in value:\n                alert_text = value[&amp;quot;data&amp;quot;].get(&amp;quot;text&amp;quot;)\n            elif &amp;quot;alert&amp;quot; in value:\n                alert_text = value[&amp;quot;alert&amp;quot;].get(&amp;quot;text&amp;quot;)\n            raise exception_class(message, screen, stacktrace, alert_text)  # type: ignore[call-arg]  # mypy is not smart enough here\n&amp;gt;       raise exception_class(message, screen, stacktrace)\nE       selenium.common.exceptions.ElementClickInterceptedException: Message: element click intercepted: Element &amp;lt;div class=&amp;quot;ant-select-selector&amp;quot;&amp;gt;...&amp;lt;/div&amp;gt; is not clickable at point (712, 450). Other element would receive the click: &amp;lt;div class=&amp;quot;ant-select-item-option-content&amp;quot;&amp;gt;...&amp;lt;/div&amp;gt;\nE         (Session info: chrome=154.0.8037.98); For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors#elementclickinterceptedexception\nE       Stacktrace:\nE       \tchromedriver!GetHandleVerifier [0x7ff6773a9d55+5a55]\nE       \tchromedriver!(No symbol) [0x7ff6772cf540]\nE       \tchromedriver!(No symbol) [0x7ff6770f45fd]\nE       \tchromedriver!(No symbol) [0x7ff677157a73]\nE       \tchromedriver!(No symbol) [0x7ff67715567a]\nE       \tchromedriver!(No symbol) [0x7ff6771529b7]\nE       \tchromedriver!(No symbol) [0x7ff677151880]\nE       \tchromedriver!(No symbol) [0x7ff677143828]\nE       \tchromedriver!(No symbol) [0x7ff6771790ea]\nE       \tchromedriver!(No symbol) [0x7ff6771430a6]\nE       \tchromedriver!(No symbol) [0x7ff67719fcd9]\nE       \tchromedriver!(No symbol) [0x7ff677141a12]\nE       \tchromedriver!(No symbol) [0x7ff677142823]\nE       \tchromedriver!GetHandleVerifier [0x7ff6777c04b1+41c1b1]\nE       \tchromedriver!GetHandleVerifier [0x7ff6777ee26b+449f6b]\nE       \tchromedriver!GetHandleVerifier [0x7ff6777e274e+43e44e]\nE       \tchromedriver!GetHandleVerifier [0x7ff6774a32fe+feffe]\nE       \tchromedriver!(No symbol) [0x7ff6772dcb55]\nE       \tchromedriver!(No symbol) [0x7ff6772d7f64]\nE       \tchromedriver!(No symbol) [0x7ff6772d80f4]\nE       \tchromedriver!(No symbol) [0x7ff6772c2e4c]\nE       \tKERNEL32!BaseThreadInitThunk [0x7ffb6c3fcdf7+17]\nE       \tntdll!RtlUserThreadStart [0x7ffb6d7bee4c+2c]\n\n..\\venv\\Lib\\site-packages\\selenium\\webdriver\\remote\\errorhandler.py:232: ElementClickInterceptedException\n&#34;}], &#34;04_language_test.py::test_09_unknown_language_shows_empty_state&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Failed&#34;, &#34;testId&#34;: &#34;04_language_test.py::test_09_unknown_language_shows_empty_state&#34;, &#34;duration&#34;: &#34;00:00:02&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Failed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;04_language_test.py::test_09_unknown_language_shows_empty_state&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:02&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;driver = &amp;lt;selenium.webdriver.chrome.webdriver.WebDriver (session=&amp;quot;a1bb44f6733407e9bf0a965838a30264&amp;quot;)&amp;gt;\n\n    @pytest.mark.testrail(896)\n    def test_09_unknown_language_shows_empty_state(driver):\n        &amp;quot;&amp;quot;&amp;quot;C896 - searching an unsupported language shows &amp;#x27;No Language Found&amp;#x27;.&amp;quot;&amp;quot;&amp;quot;\n&amp;gt;       _open_select(driver, ADDITIONAL_LANGUAGE_SELECT)\n\n04_language_test.py:665: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _\n04_language_test.py:204: in _open_select\n    container.find_element(By.CSS_SELECTOR, &amp;quot;.ant-select-selector&amp;quot;).click()\n..\\venv\\Lib\\site-packages\\selenium\\webdriver\\remote\\webelement.py:119: in click\n    self._execute(Command.CLICK_ELEMENT)\n..\\venv\\Lib\\site-packages\\selenium\\webdriver\\remote\\webelement.py:572: in _execute\n    return self._parent.execute(command, params)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n..\\venv\\Lib\\site-packages\\selenium\\webdriver\\remote\\webdriver.py:458: in execute\n    self.error_handler.check_response(response)\n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _\n\nself = &amp;lt;selenium.webdriver.remote.errorhandler.ErrorHandler object at 0x000002003204F950&amp;gt;\nresponse = {&amp;#x27;status&amp;#x27;: 400, &amp;#x27;value&amp;#x27;: &amp;#x27;{&amp;quot;value&amp;quot;:{&amp;quot;error&amp;quot;:&amp;quot;element click intercepted&amp;quot;,&amp;quot;message&amp;quot;:&amp;quot;element click intercepted: Element ...2c2e4c]\\\\n\\\\tKERNEL32!BaseThreadInitThunk [0x7ffb6c3fcdf7+17]\\\\n\\\\tntdll!RtlUserThreadStart [0x7ffb6d7bee4c+2c]\\\\n&amp;quot;}}&amp;#x27;}\n\n    def check_response(self, response: dict[str, Any]) -&amp;gt; None:\n        &amp;quot;&amp;quot;&amp;quot;Checks that a JSON response from the WebDriver does not have an\n        error.\n    \n        :Args:\n         - response - The JSON response from the WebDriver server as a dictionary\n           object.\n    \n        :Raises: If the response contains an error message.\n        &amp;quot;&amp;quot;&amp;quot;\n        status = response.get(&amp;quot;status&amp;quot;, None)\n        if not status or status == ErrorCode.SUCCESS:\n            return\n        value = None\n        message = response.get(&amp;quot;message&amp;quot;, &amp;quot;&amp;quot;)\n        screen: str = response.get(&amp;quot;screen&amp;quot;, &amp;quot;&amp;quot;)\n        stacktrace = None\n        if isinstance(status, int):\n            value_json = response.get(&amp;quot;value&amp;quot;, None)\n            if value_json and isinstance(value_json, str):\n                try:\n                    value = json.loads(value_json)\n                    if isinstance(value, dict):\n                        if len(value) == 1:\n                            value = value[&amp;quot;value&amp;quot;]\n                        status = value.get(&amp;quot;error&amp;quot;, None)\n                        if not status:\n                            status = value.get(&amp;quot;status&amp;quot;, ErrorCode.UNKNOWN_ERROR)\n                            message = value.get(&amp;quot;value&amp;quot;) or value.get(&amp;quot;message&amp;quot;)\n                            if not isinstance(message, str):\n                                value = message\n                                message = message.get(&amp;quot;message&amp;quot;) if isinstance(message, dict) else None\n                        else:\n                            message = value.get(&amp;quot;message&amp;quot;, None)\n                except ValueError:\n                    pass\n    \n        exception_class: type[WebDriverException]\n        e = ErrorCode()\n        error_codes = [item for item in dir(e) if not item.startswith(&amp;quot;__&amp;quot;)]\n        for error_code in error_codes:\n            error_info = getattr(ErrorCode, error_code)\n            if isinstance(error_info, list) and status in error_info:\n                exception_class = getattr(ExceptionMapping, error_code, WebDriverException)\n                break\n        else:\n            exception_class = WebDriverException\n    \n        if not value:\n            value = response[&amp;quot;value&amp;quot;]\n        if isinstance(value, str):\n            raise exception_class(value)\n        if message == &amp;quot;&amp;quot; and &amp;quot;message&amp;quot; in value:\n            message = value[&amp;quot;message&amp;quot;]\n    \n        screen = None  # type: ignore[assignment]\n        if &amp;quot;screen&amp;quot; in value:\n            screen = value[&amp;quot;screen&amp;quot;]\n    \n        stacktrace = None\n        st_value = value.get(&amp;quot;stackTrace&amp;quot;) or value.get(&amp;quot;stacktrace&amp;quot;)\n        if st_value:\n            if isinstance(st_value, str):\n                stacktrace = st_value.split(&amp;quot;\\n&amp;quot;)\n            else:\n                stacktrace = []\n                try:\n                    for frame in st_value:\n                        line = frame.get(&amp;quot;lineNumber&amp;quot;, &amp;quot;&amp;quot;)\n                        file = frame.get(&amp;quot;fileName&amp;quot;, &amp;quot;&amp;lt;anonymous&amp;gt;&amp;quot;)\n                        if line:\n                            file = f&amp;quot;{file}:{line}&amp;quot;\n                        meth = frame.get(&amp;quot;methodName&amp;quot;, &amp;quot;&amp;lt;anonymous&amp;gt;&amp;quot;)\n                        if &amp;quot;className&amp;quot; in frame:\n                            meth = f&amp;quot;{frame[&amp;#x27;className&amp;#x27;]}.{meth}&amp;quot;\n                        msg = &amp;quot;    at %s (%s)&amp;quot;\n                        msg = msg % (meth, file)\n                        stacktrace.append(msg)\n                except TypeError:\n                    pass\n        if exception_class == UnexpectedAlertPresentException:\n            alert_text = None\n            if &amp;quot;data&amp;quot; in value:\n                alert_text = value[&amp;quot;data&amp;quot;].get(&amp;quot;text&amp;quot;)\n            elif &amp;quot;alert&amp;quot; in value:\n                alert_text = value[&amp;quot;alert&amp;quot;].get(&amp;quot;text&amp;quot;)\n            raise exception_class(message, screen, stacktrace, alert_text)  # type: ignore[call-arg]  # mypy is not smart enough here\n&amp;gt;       raise exception_class(message, screen, stacktrace)\nE       selenium.common.exceptions.ElementClickInterceptedException: Message: element click intercepted: Element &amp;lt;div class=&amp;quot;ant-select-selector&amp;quot;&amp;gt;...&amp;lt;/div&amp;gt; is not clickable at point (712, 450). Other element would receive the click: &amp;lt;div class=&amp;quot;ant-select-item-option-content&amp;quot;&amp;gt;...&amp;lt;/div&amp;gt;\nE         (Session info: chrome=154.0.8037.98); For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors#elementclickinterceptedexception\nE       Stacktrace:\nE       \tchromedriver!GetHandleVerifier [0x7ff6773a9d55+5a55]\nE       \tchromedriver!(No symbol) [0x7ff6772cf540]\nE       \tchromedriver!(No symbol) [0x7ff6770f45fd]\nE       \tchromedriver!(No symbol) [0x7ff677157a73]\nE       \tchromedriver!(No symbol) [0x7ff67715567a]\nE       \tchromedriver!(No symbol) [0x7ff6771529b7]\nE       \tchromedriver!(No symbol) [0x7ff677151880]\nE       \tchromedriver!(No symbol) [0x7ff677143828]\nE       \tchromedriver!(No symbol) [0x7ff6771790ea]\nE       \tchromedriver!(No symbol) [0x7ff6771430a6]\nE       \tchromedriver!(No symbol) [0x7ff67719fcd9]\nE       \tchromedriver!(No symbol) [0x7ff677141a12]\nE       \tchromedriver!(No symbol) [0x7ff677142823]\nE       \tchromedriver!GetHandleVerifier [0x7ff6777c04b1+41c1b1]\nE       \tchromedriver!GetHandleVerifier [0x7ff6777ee26b+449f6b]\nE       \tchromedriver!GetHandleVerifier [0x7ff6777e274e+43e44e]\nE       \tchromedriver!GetHandleVerifier [0x7ff6774a32fe+feffe]\nE       \tchromedriver!(No symbol) [0x7ff6772dcb55]\nE       \tchromedriver!(No symbol) [0x7ff6772d7f64]\nE       \tchromedriver!(No symbol) [0x7ff6772d80f4]\nE       \tchromedriver!(No symbol) [0x7ff6772c2e4c]\nE       \tKERNEL32!BaseThreadInitThunk [0x7ffb6c3fcdf7+17]\nE       \tntdll!RtlUserThreadStart [0x7ffb6d7bee4c+2c]\n\n..\\venv\\Lib\\site-packages\\selenium\\webdriver\\remote\\errorhandler.py:232: ElementClickInterceptedException\n&#34;}], &#34;04_language_test.py::test_10_save_portal_with_its_languages&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Failed&#34;, &#34;testId&#34;: &#34;04_language_test.py::test_10_save_portal_with_its_languages&#34;, &#34;duration&#34;: &#34;00:02:09&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Failed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;04_language_test.py::test_10_save_portal_with_its_languages&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:02:09&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;driver = &amp;lt;selenium.webdriver.chrome.webdriver.WebDriver (session=&amp;quot;a1bb44f6733407e9bf0a965838a30264&amp;quot;)&amp;gt;\nconfig = {&amp;#x27;audio_path&amp;#x27;: &amp;#x27;C:\\\\Users\\\\User\\\\Desktop\\\\Test_Videos\\\\sample-4.m4a&amp;#x27;, &amp;#x27;email&amp;#x27;: &amp;#x27;ferdus.rahman@wtvglobal.com&amp;#x27;, &amp;#x27;email_org&amp;#x27;: &amp;#x27;automation@wtv.com&amp;#x27;, &amp;#x27;embed_client&amp;#x27;: &amp;#x27;Automated Embedded&amp;#x27;, ...}\n\n    def test_10_save_portal_with_its_languages(driver, config):\n        &amp;quot;&amp;quot;&amp;quot;Finish the portal so the language settings have somewhere to persist.\n    \n        Not a TestRail case of its own - it is the fixture the rest of the suite\n        needs, and it registers the portal for deletion in test_15.\n        &amp;quot;&amp;quot;&amp;quot;\n        wait = _wait(driver)\n        logo_path = os.getenv(&amp;quot;PORTAL_LOGO_PATH&amp;quot;) or config.get(&amp;quot;headshot_path&amp;quot;)\n        if not logo_path or not os.path.exists(logo_path):\n            pytest.fail(\n                &amp;quot;Portal logo image not found - set PORTAL_LOGO_PATH (or HEADSHOT_PATH) in .env &amp;quot;\n                f&amp;quot;to an image under 200 KB. Got: {logo_path!r}&amp;quot;\n            )\n        if os.path.getsize(logo_path) &amp;gt; 200 * 1024:\n            pytest.fail(f&amp;quot;Logo &amp;#x27;{logo_path}&amp;#x27; exceeds the app&amp;#x27;s 200 KB limit - pick a smaller image.&amp;quot;)\n    \n        # Header menu logo is mandatory; react-dropzone&amp;#x27;s file input is hidden but writable.\n        file_input = wait.until(EC.presence_of_element_located(\n            (By.CSS_SELECTOR, &amp;quot;.dropzone input[type=&amp;#x27;file&amp;#x27;]&amp;quot;)\n        ))\n        driver.execute_script(&amp;quot;arguments[0].style.display=&amp;#x27;block&amp;#x27;;arguments[0].style.opacity=1;&amp;quot;,\n                              file_input)\n        file_input.send_keys(os.path.abspath(logo_path))\n    \n        # The crop modal only yields an image after a real crop interaction -\n        # `onComplete` never fires from the auto-centered initial crop alone.\n        wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, &amp;quot;.crop-image-modal&amp;quot;)))\n        handle = wait.until(EC.presence_of_element_located(\n            (By.CSS_SELECTOR, &amp;quot;.ReactCrop__drag-handle.ord-se&amp;quot;)\n        ))\n        ActionChains(driver).click_and_hold(handle).move_by_offset(-12, -9).release().perform()\n        time.sleep(2)\n        _click(driver, wait.until(EC.element_to_be_clickable(\n            (By.XPATH, &amp;quot;//div[contains(@class,&amp;#x27;crop-image-modal&amp;#x27;)]//button[normalize-space()=&amp;#x27;Set&amp;#x27;]&amp;quot;)\n        )))\n        try:\n            wait.until(EC.invisibility_of_element_located((By.CSS_SELECTOR, &amp;quot;.crop-image-modal&amp;quot;)))\n        except TimeoutException:\n            pytest.fail(f&amp;quot;Crop modal never closed - &amp;#x27;Set&amp;#x27; had no cropped image. &amp;quot;\n                        f&amp;quot;{_dump(driver, &amp;#x27;lang_crop&amp;#x27;)}&amp;quot;)\n    \n        _click(driver, wait.until(EC.element_to_be_clickable(\n            (By.CSS_SELECTOR, &amp;quot;button[data-testid=&amp;#x27;branding-next-button&amp;#x27;]&amp;quot;)\n        )))\n        try:\n&amp;gt;           _wait(driver, 120).until(EC.url_matches(r&amp;quot;.*/[0-9a-f]{6,}/home&amp;quot;))\n\n04_language_test.py:725: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _\n\nself = &amp;lt;selenium.webdriver.support.wait.WebDriverWait (session=&amp;quot;a1bb44f6733407e9bf0a965838a30264&amp;quot;)&amp;gt;\nmethod = &amp;lt;function url_matches.&amp;lt;locals&amp;gt;._predicate at 0x000002003216B5E0&amp;gt;\nmessage = &amp;#x27;&amp;#x27;\n\n    def until(self, method: Callable[[D], Union[Literal[False], T]], message: str = &amp;quot;&amp;quot;) -&amp;gt; T:\n        &amp;quot;&amp;quot;&amp;quot;Wait until the method returns a value that is not False.\n    \n        Calls the method provided with the driver as an argument until the\n        return value does not evaluate to ``False``.\n    \n        Parameters:\n        -----------\n        method: callable(WebDriver)\n            - A callable object that takes a WebDriver instance as an argument.\n    \n        message: str\n            - Optional message for :exc:`TimeoutException`\n    \n        Return:\n        -------\n        object: T\n            - The result of the last call to `method`\n    \n        Raises:\n        -------\n        TimeoutException\n            - If &amp;#x27;method&amp;#x27; does not return a truthy value within the WebDriverWait\n            object&amp;#x27;s timeout\n    \n        Example:\n        --------\n        &amp;gt;&amp;gt;&amp;gt; from selenium.webdriver.common.by import By\n        &amp;gt;&amp;gt;&amp;gt; from selenium.webdriver.support.ui import WebDriverWait\n        &amp;gt;&amp;gt;&amp;gt; from selenium.webdriver.support import expected_conditions as EC\n    \n        # Wait until an element is visible on the page\n        &amp;gt;&amp;gt;&amp;gt; wait = WebDriverWait(driver, 10)\n        &amp;gt;&amp;gt;&amp;gt; element = wait.until(EC.visibility_of_element_located((By.ID, &amp;quot;exampleId&amp;quot;)))\n        &amp;gt;&amp;gt;&amp;gt; print(element.text)\n        &amp;quot;&amp;quot;&amp;quot;\n        screen = None\n        stacktrace = None\n    \n        end_time = time.monotonic() + self._timeout\n        while True:\n            try:\n                value = method(self._driver)\n                if value:\n                    return value\n            except self._ignored_exceptions as exc:\n                screen = getattr(exc, &amp;quot;screen&amp;quot;, None)\n                stacktrace = getattr(exc, &amp;quot;stacktrace&amp;quot;, None)\n            if time.monotonic() &amp;gt; end_time:\n                break\n            time.sleep(self._poll)\n&amp;gt;       raise TimeoutException(message, screen, stacktrace)\nE       selenium.common.exceptions.TimeoutException: Message:\n\n..\\venv\\Lib\\site-packages\\selenium\\webdriver\\support\\wait.py:138: TimeoutException\n\nDuring handling of the above exception, another exception occurred:\n\ndriver = &amp;lt;selenium.webdriver.chrome.webdriver.WebDriver (session=&amp;quot;a1bb44f6733407e9bf0a965838a30264&amp;quot;)&amp;gt;\nconfig = {&amp;#x27;audio_path&amp;#x27;: &amp;#x27;C:\\\\Users\\\\User\\\\Desktop\\\\Test_Videos\\\\sample-4.m4a&amp;#x27;, &amp;#x27;email&amp;#x27;: &amp;#x27;ferdus.rahman@wtvglobal.com&amp;#x27;, &amp;#x27;email_org&amp;#x27;: &amp;#x27;automation@wtv.com&amp;#x27;, &amp;#x27;embed_client&amp;#x27;: &amp;#x27;Automated Embedded&amp;#x27;, ...}\n\n    def test_10_save_portal_with_its_languages(driver, config):\n        &amp;quot;&amp;quot;&amp;quot;Finish the portal so the language settings have somewhere to persist.\n    \n        Not a TestRail case of its own - it is the fixture the rest of the suite\n        needs, and it registers the portal for deletion in test_15.\n        &amp;quot;&amp;quot;&amp;quot;\n        wait = _wait(driver)\n        logo_path = os.getenv(&amp;quot;PORTAL_LOGO_PATH&amp;quot;) or config.get(&amp;quot;headshot_path&amp;quot;)\n        if not logo_path or not os.path.exists(logo_path):\n            pytest.fail(\n                &amp;quot;Portal logo image not found - set PORTAL_LOGO_PATH (or HEADSHOT_PATH) in .env &amp;quot;\n                f&amp;quot;to an image under 200 KB. Got: {logo_path!r}&amp;quot;\n            )\n        if os.path.getsize(logo_path) &amp;gt; 200 * 1024:\n            pytest.fail(f&amp;quot;Logo &amp;#x27;{logo_path}&amp;#x27; exceeds the app&amp;#x27;s 200 KB limit - pick a smaller image.&amp;quot;)\n    \n        # Header menu logo is mandatory; react-dropzone&amp;#x27;s file input is hidden but writable.\n        file_input = wait.until(EC.presence_of_element_located(\n            (By.CSS_SELECTOR, &amp;quot;.dropzone input[type=&amp;#x27;file&amp;#x27;]&amp;quot;)\n        ))\n        driver.execute_script(&amp;quot;arguments[0].style.display=&amp;#x27;block&amp;#x27;;arguments[0].style.opacity=1;&amp;quot;,\n                              file_input)\n        file_input.send_keys(os.path.abspath(logo_path))\n    \n        # The crop modal only yields an image after a real crop interaction -\n        # `onComplete` never fires from the auto-centered initial crop alone.\n        wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, &amp;quot;.crop-image-modal&amp;quot;)))\n        handle = wait.until(EC.presence_of_element_located(\n            (By.CSS_SELECTOR, &amp;quot;.ReactCrop__drag-handle.ord-se&amp;quot;)\n        ))\n        ActionChains(driver).click_and_hold(handle).move_by_offset(-12, -9).release().perform()\n        time.sleep(2)\n        _click(driver, wait.until(EC.element_to_be_clickable(\n            (By.XPATH, &amp;quot;//div[contains(@class,&amp;#x27;crop-image-modal&amp;#x27;)]//button[normalize-space()=&amp;#x27;Set&amp;#x27;]&amp;quot;)\n        )))\n        try:\n            wait.until(EC.invisibility_of_element_located((By.CSS_SELECTOR, &amp;quot;.crop-image-modal&amp;quot;)))\n        except TimeoutException:\n            pytest.fail(f&amp;quot;Crop modal never closed - &amp;#x27;Set&amp;#x27; had no cropped image. &amp;quot;\n                        f&amp;quot;{_dump(driver, &amp;#x27;lang_crop&amp;#x27;)}&amp;quot;)\n    \n        _click(driver, wait.until(EC.element_to_be_clickable(\n            (By.CSS_SELECTOR, &amp;quot;button[data-testid=&amp;#x27;branding-next-button&amp;#x27;]&amp;quot;)\n        )))\n        try:\n            _wait(driver, 120).until(EC.url_matches(r&amp;quot;.*/[0-9a-f]{6,}/home&amp;quot;))\n        except TimeoutException:\n&amp;gt;           pytest.fail(f&amp;quot;Branding save did not create a portal (still at {driver.current_url}). &amp;quot;\n                        f&amp;quot;{_dump(driver, &amp;#x27;lang_branding_save&amp;#x27;)}&amp;quot;)\nE           Failed: Branding save did not create a portal (still at https://connectstudio-admin-dev.world-television.com/new/branding). diagnostics saved to failure_lang_branding_save.png / failure_lang_branding_save.html\n\n04_language_test.py:727: Failed\n&#34;}], &#34;04_language_test.py::test_11_additional_languages_persist_after_reload&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Failed&#34;, &#34;testId&#34;: &#34;04_language_test.py::test_11_additional_languages_persist_after_reload&#34;, &#34;duration&#34;: &#34;3 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Failed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;04_language_test.py::test_11_additional_languages_persist_after_reload&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;3 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;driver = &amp;lt;selenium.webdriver.chrome.webdriver.WebDriver (session=&amp;quot;a1bb44f6733407e9bf0a965838a30264&amp;quot;)&amp;gt;\n\n    @pytest.mark.testrail(895)\n    def test_11_additional_languages_persist_after_reload(driver):\n        &amp;quot;&amp;quot;&amp;quot;C895 - the selected additional languages survive a save and a reload.&amp;quot;&amp;quot;&amp;quot;\n&amp;gt;       _open_portal_page(driver, &amp;quot;branding&amp;quot;)\n\n04_language_test.py:751: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _\n\ndriver = &amp;lt;selenium.webdriver.chrome.webdriver.WebDriver (session=&amp;quot;a1bb44f6733407e9bf0a965838a30264&amp;quot;)&amp;gt;\npage = &amp;#x27;branding&amp;#x27;\n\n    def _open_portal_page(driver, page):\n        &amp;quot;&amp;quot;&amp;quot;Open /&amp;lt;portalId&amp;gt;/&amp;lt;page&amp;gt; for the portal this run created.&amp;quot;&amp;quot;&amp;quot;\n&amp;gt;       assert PORTAL[&amp;quot;url&amp;quot;], &amp;quot;Portal not created - test_10 must run first.&amp;quot;\nE       AssertionError: Portal not created - test_10 must run first.\nE       assert None\n\n04_language_test.py:448: AssertionError\n&#34;}], &#34;04_language_test.py::test_12_home_language_selector_offers_default_then_additional&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Failed&#34;, &#34;testId&#34;: &#34;04_language_test.py::test_12_home_language_selector_offers_default_then_additional&#34;, &#34;duration&#34;: &#34;1 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Failed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;04_language_test.py::test_12_home_language_selector_offers_default_then_additional&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;1 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;driver = &amp;lt;selenium.webdriver.chrome.webdriver.WebDriver (session=&amp;quot;a1bb44f6733407e9bf0a965838a30264&amp;quot;)&amp;gt;\n\n    @pytest.mark.testrail(897)\n    def test_12_home_language_selector_offers_default_then_additional(driver):\n        &amp;quot;&amp;quot;&amp;quot;C897 - per-language selectors offer [default, ...additional] in order.\n    \n        Note these selectors are fed the raw code list, so the options read &amp;#x27;it&amp;#x27; /\n        &amp;#x27;de&amp;#x27; rather than &amp;#x27;Italian&amp;#x27; / &amp;#x27;German&amp;#x27; - that inconsistency is C919 and is\n        asserted here as the CURRENT behaviour, not as the desired one.\n        &amp;quot;&amp;quot;&amp;quot;\n&amp;gt;       _open_portal_page(driver, &amp;quot;home&amp;quot;)\n\n04_language_test.py:772: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _\n\ndriver = &amp;lt;selenium.webdriver.chrome.webdriver.WebDriver (session=&amp;quot;a1bb44f6733407e9bf0a965838a30264&amp;quot;)&amp;gt;\npage = &amp;#x27;home&amp;#x27;\n\n    def _open_portal_page(driver, page):\n        &amp;quot;&amp;quot;&amp;quot;Open /&amp;lt;portalId&amp;gt;/&amp;lt;page&amp;gt; for the portal this run created.&amp;quot;&amp;quot;&amp;quot;\n&amp;gt;       assert PORTAL[&amp;quot;url&amp;quot;], &amp;quot;Portal not created - test_10 must run first.&amp;quot;\nE       AssertionError: Portal not created - test_10 must run first.\nE       assert None\n\n04_language_test.py:448: AssertionError\n&#34;}], &#34;04_language_test.py::test_13_home_content_is_stored_per_language&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Failed&#34;, &#34;testId&#34;: &#34;04_language_test.py::test_13_home_content_is_stored_per_language&#34;, &#34;duration&#34;: &#34;00:00:33&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Failed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;04_language_test.py::test_13_home_content_is_stored_per_language&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:33&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;driver = &amp;lt;selenium.webdriver.chrome.webdriver.WebDriver (session=&amp;quot;a1bb44f6733407e9bf0a965838a30264&amp;quot;)&amp;gt;\n\n    @pytest.mark.testrail(898, 920)\n    def test_13_home_content_is_stored_per_language(driver):\n        &amp;quot;&amp;quot;&amp;quot;C898/C920 - each language keeps its own home-page content.&amp;quot;&amp;quot;&amp;quot;\n        translated = f&amp;quot;{PORTAL_NAME} [{ADDITIONAL_CODES[0]}]&amp;quot;\n        wait = _wait(driver)\n    \n        # C920 - the selector is only usable once the default language is saved,\n        # which test_10 did; before that it is disabled with a warning.\n&amp;gt;       selector = _select_container(driver, HOME_LANGUAGE_SELECT)\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\n04_language_test.py:793: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _\n04_language_test.py:195: in _select_container\n    container = _wait(driver, timeout).until(EC.presence_of_element_located((By.XPATH, xpath)))\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _\n\nself = &amp;lt;selenium.webdriver.support.wait.WebDriverWait (session=&amp;quot;a1bb44f6733407e9bf0a965838a30264&amp;quot;)&amp;gt;\nmethod = &amp;lt;function presence_of_element_located.&amp;lt;locals&amp;gt;._predicate at 0x0000020033720670&amp;gt;\nmessage = &amp;#x27;&amp;#x27;\n\n    def until(self, method: Callable[[D], Union[Literal[False], T]], message: str = &amp;quot;&amp;quot;) -&amp;gt; T:\n        &amp;quot;&amp;quot;&amp;quot;Wait until the method returns a value that is not False.\n    \n        Calls the method provided with the driver as an argument until the\n        return value does not evaluate to ``False``.\n    \n        Parameters:\n        -----------\n        method: callable(WebDriver)\n            - A callable object that takes a WebDriver instance as an argument.\n    \n        message: str\n            - Optional message for :exc:`TimeoutException`\n    \n        Return:\n        -------\n        object: T\n            - The result of the last call to `method`\n    \n        Raises:\n        -------\n        TimeoutException\n            - If &amp;#x27;method&amp;#x27; does not return a truthy value within the WebDriverWait\n            object&amp;#x27;s timeout\n    \n        Example:\n        --------\n        &amp;gt;&amp;gt;&amp;gt; from selenium.webdriver.common.by import By\n        &amp;gt;&amp;gt;&amp;gt; from selenium.webdriver.support.ui import WebDriverWait\n        &amp;gt;&amp;gt;&amp;gt; from selenium.webdriver.support import expected_conditions as EC\n    \n        # Wait until an element is visible on the page\n        &amp;gt;&amp;gt;&amp;gt; wait = WebDriverWait(driver, 10)\n        &amp;gt;&amp;gt;&amp;gt; element = wait.until(EC.visibility_of_element_located((By.ID, &amp;quot;exampleId&amp;quot;)))\n        &amp;gt;&amp;gt;&amp;gt; print(element.text)\n        &amp;quot;&amp;quot;&amp;quot;\n        screen = None\n        stacktrace = None\n    \n        end_time = time.monotonic() + self._timeout\n        while True:\n            try:\n                value = method(self._driver)\n                if value:\n                    return value\n            except self._ignored_exceptions as exc:\n                screen = getattr(exc, &amp;quot;screen&amp;quot;, None)\n                stacktrace = getattr(exc, &amp;quot;stacktrace&amp;quot;, None)\n            if time.monotonic() &amp;gt; end_time:\n                break\n            time.sleep(self._poll)\n&amp;gt;       raise TimeoutException(message, screen, stacktrace)\nE       selenium.common.exceptions.TimeoutException: Message: \nE       Stacktrace:\nE       \tchromedriver!GetHandleVerifier [0x7ff6773a9d55+5a55]\nE       \tchromedriver!(No symbol) [0x7ff6772cf540]\nE       \tchromedriver!(No symbol) [0x7ff6770f45fd]\nE       \tchromedriver!(No symbol) [0x7ff67714fca1]\nE       \tchromedriver!(No symbol) [0x7ff67714ff6c]\nE       \tchromedriver!(No symbol) [0x7ff6771a3077]\nE       \tchromedriver!(No symbol) [0x7ff67719fcd9]\nE       \tchromedriver!(No symbol) [0x7ff677141a12]\nE       \tchromedriver!(No symbol) [0x7ff677142823]\nE       \tchromedriver!GetHandleVerifier [0x7ff6777c04b1+41c1b1]\nE       \tchromedriver!GetHandleVerifier [0x7ff6777ee26b+449f6b]\nE       \tchromedriver!GetHandleVerifier [0x7ff6777e274e+43e44e]\nE       \tchromedriver!GetHandleVerifier [0x7ff6774a32fe+feffe]\nE       \tchromedriver!(No symbol) [0x7ff6772dcb55]\nE       \tchromedriver!(No symbol) [0x7ff6772d7f64]\nE       \tchromedriver!(No symbol) [0x7ff6772d80f4]\nE       \tchromedriver!(No symbol) [0x7ff6772c2e4c]\nE       \tKERNEL32!BaseThreadInitThunk [0x7ffb6c3fcdf7+17]\nE       \tntdll!RtlUserThreadStart [0x7ffb6d7bee4c+2c]\n\n..\\venv\\Lib\\site-packages\\selenium\\webdriver\\support\\wait.py:138: TimeoutException\n&#34;}], &#34;04_language_test.py::test_14_publish_lists_one_url_per_language&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Failed&#34;, &#34;testId&#34;: &#34;04_language_test.py::test_14_publish_lists_one_url_per_language&#34;, &#34;duration&#34;: &#34;2 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Failed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;04_language_test.py::test_14_publish_lists_one_url_per_language&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;2 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;driver = &amp;lt;selenium.webdriver.chrome.webdriver.WebDriver (session=&amp;quot;a1bb44f6733407e9bf0a965838a30264&amp;quot;)&amp;gt;\n\n    @pytest.mark.testrail(912)\n    def test_14_publish_lists_one_url_per_language(driver):\n        &amp;quot;&amp;quot;&amp;quot;C912 - Publish shows a portal URL for the default and every additional language.&amp;quot;&amp;quot;&amp;quot;\n&amp;gt;       _open_portal_page(driver, &amp;quot;publish&amp;quot;)\n\n04_language_test.py:861: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _\n\ndriver = &amp;lt;selenium.webdriver.chrome.webdriver.WebDriver (session=&amp;quot;a1bb44f6733407e9bf0a965838a30264&amp;quot;)&amp;gt;\npage = &amp;#x27;publish&amp;#x27;\n\n    def _open_portal_page(driver, page):\n        &amp;quot;&amp;quot;&amp;quot;Open /&amp;lt;portalId&amp;gt;/&amp;lt;page&amp;gt; for the portal this run created.&amp;quot;&amp;quot;&amp;quot;\n&amp;gt;       assert PORTAL[&amp;quot;url&amp;quot;], &amp;quot;Portal not created - test_10 must run first.&amp;quot;\nE       AssertionError: Portal not created - test_10 must run first.\nE       assert None\n\n04_language_test.py:448: AssertionError\n&#34;}], &#34;04_language_test.py::test_15_session_language_screen&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Skipped&#34;, &#34;testId&#34;: &#34;04_language_test.py::test_15_session_language_screen&#34;, &#34;duration&#34;: &#34;5 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Skipped&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;04_language_test.py::test_15_session_language_screen&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;5 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;(&amp;#x27;C:\\\\Users\\\\User\\\\selenium_project\\\\PyTestBasics\\\\04_language_test.py&amp;#x27;, 890, &amp;#x27;Skipped: LANG_SESSION_URL not set - no existing session to inspect&amp;#x27;)\n&#34;}], &#34;04_language_test.py::test_16_cleanup_and_baseline_intact&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Failed&#34;, &#34;testId&#34;: &#34;04_language_test.py::test_16_cleanup_and_baseline_intact&#34;, &#34;duration&#34;: &#34;00:00:58&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Failed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;04_language_test.py::test_16_cleanup_and_baseline_intact&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:58&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;driver = &amp;lt;selenium.webdriver.chrome.webdriver.WebDriver (session=&amp;quot;a1bb44f6733407e9bf0a965838a30264&amp;quot;)&amp;gt;\n\n    def test_16_cleanup_and_baseline_intact(driver):\n        &amp;quot;&amp;quot;&amp;quot;Delete only the portal this run created, and prove nothing else moved.\n    \n        The created CLIENT is left behind on purpose - the admin UI exposes no\n        client delete. Its name carries RUN_ID, so it is safe to clean up\n        server-side if the environment needs it.\n        &amp;quot;&amp;quot;&amp;quot;\n        _open_client_list(driver)\n        _search_client_list(driver, CLIENT_NAME)\n&amp;gt;       view = _wait(driver).until(EC.presence_of_element_located((\n            By.XPATH, f&amp;quot;//tr[.//td[normalize-space()=&amp;#x27;{CLIENT_NAME}&amp;#x27;]]//td[contains(@class,&amp;#x27;portal-view-button&amp;#x27;)]&amp;quot;,\n        )))\n\n04_language_test.py:933: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _\n\nself = &amp;lt;selenium.webdriver.support.wait.WebDriverWait (session=&amp;quot;a1bb44f6733407e9bf0a965838a30264&amp;quot;)&amp;gt;\nmethod = &amp;lt;function presence_of_element_located.&amp;lt;locals&amp;gt;._predicate at 0x0000020033721220&amp;gt;\nmessage = &amp;#x27;&amp;#x27;\n\n    def until(self, method: Callable[[D], Union[Literal[False], T]], message: str = &amp;quot;&amp;quot;) -&amp;gt; T:\n        &amp;quot;&amp;quot;&amp;quot;Wait until the method returns a value that is not False.\n    \n        Calls the method provided with the driver as an argument until the\n        return value does not evaluate to ``False``.\n    \n        Parameters:\n        -----------\n        method: callable(WebDriver)\n            - A callable object that takes a WebDriver instance as an argument.\n    \n        message: str\n            - Optional message for :exc:`TimeoutException`\n    \n        Return:\n        -------\n        object: T\n            - The result of the last call to `method`\n    \n        Raises:\n        -------\n        TimeoutException\n            - If &amp;#x27;method&amp;#x27; does not return a truthy value within the WebDriverWait\n            object&amp;#x27;s timeout\n    \n        Example:\n        --------\n        &amp;gt;&amp;gt;&amp;gt; from selenium.webdriver.common.by import By\n        &amp;gt;&amp;gt;&amp;gt; from selenium.webdriver.support.ui import WebDriverWait\n        &amp;gt;&amp;gt;&amp;gt; from selenium.webdriver.support import expected_conditions as EC\n    \n        # Wait until an element is visible on the page\n        &amp;gt;&amp;gt;&amp;gt; wait = WebDriverWait(driver, 10)\n        &amp;gt;&amp;gt;&amp;gt; element = wait.until(EC.visibility_of_element_located((By.ID, &amp;quot;exampleId&amp;quot;)))\n        &amp;gt;&amp;gt;&amp;gt; print(element.text)\n        &amp;quot;&amp;quot;&amp;quot;\n        screen = None\n        stacktrace = None\n    \n        end_time = time.monotonic() + self._timeout\n        while True:\n            try:\n                value = method(self._driver)\n                if value:\n                    return value\n            except self._ignored_exceptions as exc:\n                screen = getattr(exc, &amp;quot;screen&amp;quot;, None)\n                stacktrace = getattr(exc, &amp;quot;stacktrace&amp;quot;, None)\n            if time.monotonic() &amp;gt; end_time:\n                break\n            time.sleep(self._poll)\n&amp;gt;       raise TimeoutException(message, screen, stacktrace)\nE       selenium.common.exceptions.TimeoutException: Message: \nE       Stacktrace:\nE       \tchromedriver!GetHandleVerifier [0x7ff6773a9d55+5a55]\nE       \tchromedriver!(No symbol) [0x7ff6772cf540]\nE       \tchromedriver!(No symbol) [0x7ff6770f45fd]\nE       \tchromedriver!(No symbol) [0x7ff67714fca1]\nE       \tchromedriver!(No symbol) [0x7ff67714ff6c]\nE       \tchromedriver!(No symbol) [0x7ff6771a3077]\nE       \tchromedriver!(No symbol) [0x7ff67719fcd9]\nE       \tchromedriver!(No symbol) [0x7ff677141a12]\nE       \tchromedriver!(No symbol) [0x7ff677142823]\nE       \tchromedriver!GetHandleVerifier [0x7ff6777c04b1+41c1b1]\nE       \tchromedriver!GetHandleVerifier [0x7ff6777ee26b+449f6b]\nE       \tchromedriver!GetHandleVerifier [0x7ff6777e274e+43e44e]\nE       \tchromedriver!GetHandleVerifier [0x7ff6774a32fe+feffe]\nE       \tchromedriver!(No symbol) [0x7ff6772dcb55]\nE       \tchromedriver!(No symbol) [0x7ff6772d7f64]\nE       \tchromedriver!(No symbol) [0x7ff6772d80f4]\nE       \tchromedriver!(No symbol) [0x7ff6772c2e4c]\nE       \tKERNEL32!BaseThreadInitThunk [0x7ffb6c3fcdf7+17]\nE       \tntdll!RtlUserThreadStart [0x7ffb6d7bee4c+2c]\n\n..\\venv\\Lib\\site-packages\\selenium\\webdriver\\support\\wait.py:138: TimeoutException\n&#34;}], &#34;session_test.py::test_00_cleanup&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;session_test.py::test_00_cleanup&#34;, &#34;duration&#34;: &#34;00:01:54&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;session_test.py::test_00_cleanup&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:01:54&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n  \ud83d\uddd1\ufe0f Deleted &amp;#x27;Automated Webcast VxS - 001&amp;#x27; (10 -&amp;gt; 9).\n  \ud83d\uddd1\ufe0f Deleted &amp;#x27;Automated Webcast AxS - 002&amp;#x27; (9 -&amp;gt; 8).\n  \ud83d\uddd1\ufe0f Deleted &amp;#x27;Automated Webcast V - 003&amp;#x27; (8 -&amp;gt; 7).\n  \ud83d\uddd1\ufe0f Deleted &amp;#x27;Automated Webcast A - 004&amp;#x27; (7 -&amp;gt; 6).\n  \ud83d\uddd1\ufe0f Deleted &amp;#x27;Automated Webcast AxE - 005&amp;#x27; (6 -&amp;gt; 5).\n  \ud83d\uddd1\ufe0f Deleted &amp;#x27;Automated Webcast VxS - 001&amp;#x27; (5 -&amp;gt; 4).\n  \ud83d\uddd1\ufe0f Deleted &amp;#x27;Automated Webcast AxS - 002&amp;#x27; (4 -&amp;gt; 3).\n  \ud83d\uddd1\ufe0f Deleted &amp;#x27;Automated Webcast V - 003&amp;#x27; (3 -&amp;gt; 2).\n  \ud83d\uddd1\ufe0f Deleted &amp;#x27;Automated Webcast A - 004&amp;#x27; (2 -&amp;gt; 1).\n  Cleanup done \u2014 9 webcast(s) deleted.\n&#34;}], &#34;session_test.py::test_01_login&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;session_test.py::test_01_login&#34;, &#34;duration&#34;: &#34;00:00:30&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;session_test.py::test_01_login&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:30&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2705 Login successful: Welcome to\nCONNECT\nSTUDIO\n&#34;}], &#34;session_test.py::test_02_open_target_portal&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;session_test.py::test_02_open_target_portal&#34;, &#34;duration&#34;: &#34;00:00:05&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;session_test.py::test_02_open_target_portal&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:05&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\u2705 Opened portal: Portal\n&#34;}], &#34;session_test.py::test_03_create_all_webcasts&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;session_test.py::test_03_create_all_webcasts&#34;, &#34;duration&#34;: &#34;00:09:10&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;session_test.py::test_03_create_all_webcasts&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:09:10&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\n============================================================\n  WEBCAST 1/5: &amp;#x27;Automated Webcast VxS - 001&amp;#x27;  [VxS: Video &amp;amp; slides (default)]\n============================================================\n  \u2705 Webcast &amp;#x27;Automated Webcast VxS - 001&amp;#x27; created.\n  Found 2 webcast summaries.\n  \u2705 Found webcast &amp;#x27;Automated Webcast VxS - 001&amp;#x27; (summary #1).\n  Clicked &amp;#x27;Activate&amp;#x27; switch.\n  Popup after activate: Live Session Created Successfully\n  \u2705 Manage page opened for &amp;#x27;Automated Webcast VxS - 001&amp;#x27;.\n  Popup after webcast_type_save: Webcast Details updated successfully\n  \u2705 Webcast type set to &amp;#x27;Video &amp;amp; slides (default)&amp;#x27;.\n  Popup after slide_save: Slides uploaded successfully\n  \u2705 slide saved.\n  Popup after slide_save: Slides uploaded successfully\n  \u2705 slide saved.\n  \ud83d\uddd1\ufe0f Cancelled the existing video before uploading.\n  Popup after video_save: Trailer video uploaded successfully\n  \u2705 video saved.\n  Popup after layout_save: Layout updated successfully\n  \u2705 Layout saved.\n  \u21a9\ufe0f  Clicked Back \u2014 returned to Sessions page.\n  \ud83c\udf89 Webcast 1/5 &amp;#x27;Automated Webcast VxS - 001&amp;#x27; fully done!\n\n\n============================================================\n  WEBCAST 2/5: &amp;#x27;Automated Webcast AxS - 002&amp;#x27;  [AxS: Audio &amp;amp; slides]\n============================================================\n  \u2705 Webcast &amp;#x27;Automated Webcast AxS - 002&amp;#x27; created.\n  Found 3 webcast summaries.\n  \u2705 Found webcast &amp;#x27;Automated Webcast AxS - 002&amp;#x27; (summary #2).\n  Clicked &amp;#x27;Activate&amp;#x27; switch.\n  Popup after activate: Live Session Created Successfully\n  \u2705 Manage page opened for &amp;#x27;Automated Webcast AxS - 002&amp;#x27;.\n  Popup after webcast_type_save: Webcast Details updated successfully\n  \u2705 Webcast type set to &amp;#x27;Audio &amp;amp; slides&amp;#x27;.\n  Popup after slide_save: Slides uploaded successfully\n  \u2705 slide saved.\n  Popup after audio_save: Preview audio uploaded successfully\n  \u2705 audio saved.\n  Popup after headshot_save: Headshot uploaded successfully\n  \u2705 headshot saved (1/3).\n  Popup after headshot_save: Headshot uploaded successfully\n  \u2705 headshot saved (2/3).\n  Popup after headshot_save: Headshot uploaded successfully\n  \u2705 headshot saved (3/3).\n  Popup after slide_save: Slides uploaded successfully\n  \u2705 slide saved.\n  Popup after layout_save: Layout updated successfully\n  \u2705 Layout saved.\n  \u21a9\ufe0f  Clicked Back \u2014 returned to Sessions page.\n  \ud83c\udf89 Webcast 2/5 &amp;#x27;Automated Webcast AxS - 002&amp;#x27; fully done!\n\n\n============================================================\n  WEBCAST 3/5: &amp;#x27;Automated Webcast V - 003&amp;#x27;  [V: Video only]\n============================================================\n  \u2705 Webcast &amp;#x27;Automated Webcast V - 003&amp;#x27; created.\n  Found 4 webcast summaries.\n  \u2705 Found webcast &amp;#x27;Automated Webcast V - 003&amp;#x27; (summary #3).\n  Clicked &amp;#x27;Activate&amp;#x27; switch.\n  Popup after activate: Live Session Created Successfully\n  \u2705 Manage page opened for &amp;#x27;Automated Webcast V - 003&amp;#x27;.\n  Popup after webcast_type_save: Webcast Details updated successfully\n  \u2705 Webcast type set to &amp;#x27;Video only&amp;#x27;.\n  \ud83d\uddd1\ufe0f Cancelled the existing video before uploading.\n  Popup after video_save: Trailer video uploaded successfully\n  \u2705 video saved.\n  Popup after layout_save: Content updated successfully\n  \u2705 Layout saved.\n  \u21a9\ufe0f  Clicked Back \u2014 returned to Sessions page.\n  \ud83c\udf89 Webcast 3/5 &amp;#x27;Automated Webcast V - 003&amp;#x27; fully done!\n\n\n============================================================\n  WEBCAST 4/5: &amp;#x27;Automated Webcast A - 004&amp;#x27;  [A: Audio only]\n============================================================\n  \u2705 Webcast &amp;#x27;Automated Webcast A - 004&amp;#x27; created.\n  Found 5 webcast summaries.\n  \u2705 Found webcast &amp;#x27;Automated Webcast A - 004&amp;#x27; (summary #4).\n  Clicked &amp;#x27;Activate&amp;#x27; switch.\n  Popup after activate: Live Session Created Successfully\n  \u2705 Manage page opened for &amp;#x27;Automated Webcast A - 004&amp;#x27;.\n  Popup after webcast_type_save: Webcast Details updated successfully\n  \u2705 Webcast type set to &amp;#x27;Audio only&amp;#x27;.\n  Popup after audio_save: Preview audio uploaded successfully\n  \u2705 audio saved.\n  Popup after headshot_save: Headshot uploaded successfully\n  \u2705 headshot saved (1/3).\n  Popup after headshot_save: Headshot uploaded successfully\n  \u2705 headshot saved (2/3).\n  Popup after headshot_save: Headshot uploaded successfully\n  \u2705 headshot saved (3/3).\n  Popup after layout_save: Content updated successfully\n  \u2705 Layout saved.\n  \u21a9\ufe0f  Clicked Back \u2014 returned to Sessions page.\n  \ud83c\udf89 Webcast 4/5 &amp;#x27;Automated Webcast A - 004&amp;#x27; fully done!\n\n\n============================================================\n  WEBCAST 5/5: &amp;#x27;Automated Webcast AxE - 005&amp;#x27;  [AxE: Audio &amp;amp; slides]\n============================================================\n  \u2705 Webcast &amp;#x27;Automated Webcast AxE - 005&amp;#x27; created.\n  Found 6 webcast summaries.\n  \u2705 Found webcast &amp;#x27;Automated Webcast AxE - 005&amp;#x27; (summary #5).\n  Clicked &amp;#x27;Activate&amp;#x27; switch.\n  Popup after activate: Status updated successfully!\n  \u2705 Manage page opened for &amp;#x27;Automated Webcast AxE - 005&amp;#x27;.\n  Popup after webcast_type_save: Webcast Details updated successfully\n  \u2705 Webcast type set to &amp;#x27;Audio &amp;amp; slides&amp;#x27;.\n  Popup after slide_save: Slides uploaded successfully\n  \u2705 slide saved.\n  Popup after audio_save: Preview audio uploaded successfully\n  \u2705 audio saved.\n  Popup after headshot_save: Headshot uploaded successfully\n  \u2705 headshot saved (1/3).\n  Popup after headshot_save: Headshot uploaded successfully\n  \u2705 headshot saved (2/3).\n  Popup after headshot_save: Headshot uploaded successfully\n  \u2705 headshot saved (3/3).\n  Popup after slide_save: Slides uploaded successfully\n  \u2705 slide saved.\n  Clicked AxE layout switch ((//button[@role=&amp;#x27;switch&amp;#x27;])[1]).\n  Popup after layout_save: Layout updated successfully\n  \u2705 Layout saved.\n  \u21a9\ufe0f  Clicked Back \u2014 returned to Sessions page.\n  \ud83c\udf89 Webcast 5/5 &amp;#x27;Automated Webcast AxE - 005&amp;#x27; fully done!\n\n\u2705 All webcasts created and configured successfully!\n&#34;}]}, &#34;renderCollapsed&#34;: [&#34;passed&#34;], &#34;initialSort&#34;: &#34;result&#34;, &#34;title&#34;: &#34;Automation Test Report&#34;}"></div>
+    <script>
+      (function(){function r(e,n,t){function o(i,f){if(!n[i]){if(!e[i]){var c="function"==typeof require&&require;if(!f&&c)return c(i,!0);if(u)return u(i,!0);var a=new Error("Cannot find module '"+i+"'");throw a.code="MODULE_NOT_FOUND",a}var p=n[i]={exports:{}};e[i][0].call(p.exports,function(r){var n=e[i][1][r];return o(n||r)},p,p.exports,r,e,n,t)}return n[i].exports}for(var u="function"==typeof require&&require,i=0;i<t.length;i++)o(t[i]);return o}return r})()({1:[function(require,module,exports){
+const { getCollapsedCategory, setCollapsedIds } = require('./storage.js')
+
+class DataManager {
+    setManager(data) {
+        const collapsedCategories = [...getCollapsedCategory(data.renderCollapsed)]
+        const collapsedIds = []
+        const tests = Object.values(data.tests).flat().map((test, index) => {
+            const collapsed = collapsedCategories.includes(test.result.toLowerCase())
+            const id = `test_${index}`
+            if (collapsed) {
+                collapsedIds.push(id)
+            }
+            return {
+                ...test,
+                id,
+                collapsed,
+            }
+        })
+        const dataBlob = { ...data, tests }
+        this.data = { ...dataBlob }
+        this.renderData = { ...dataBlob }
+        setCollapsedIds(collapsedIds)
+    }
+
+    get allData() {
+        return { ...this.data }
+    }
+
+    resetRender() {
+        this.renderData = { ...this.data }
+    }
+
+    setRender(data) {
+        this.renderData.tests = [...data]
+    }
+
+    toggleCollapsedItem(id) {
+        this.renderData.tests = this.renderData.tests.map((test) =>
+            test.id === id ? { ...test, collapsed: !test.collapsed } : test,
+        )
+    }
+
+    set allCollapsed(collapsed) {
+        this.renderData = { ...this.renderData, tests: [...this.renderData.tests.map((test) => (
+            { ...test, collapsed }
+        ))] }
+    }
+
+    get testSubset() {
+        return [...this.renderData.tests]
+    }
+
+    get environment() {
+        return this.renderData.environment
+    }
+
+    get initialSort() {
+        return this.data.initialSort
+    }
+}
+
+module.exports = {
+    manager: new DataManager(),
+}
+
+},{"./storage.js":8}],2:[function(require,module,exports){
+const mediaViewer = require('./mediaviewer.js')
+const templateEnvRow = document.getElementById('template_environment_row')
+const templateResult = document.getElementById('template_results-table__tbody')
+
+function htmlToElements(html) {
+    const temp = document.createElement('template')
+    temp.innerHTML = html
+    return temp.content.childNodes
+}
+
+const find = (selector, elem) => {
+    if (!elem) {
+        elem = document
+    }
+    return elem.querySelector(selector)
+}
+
+const findAll = (selector, elem) => {
+    if (!elem) {
+        elem = document
+    }
+    return [...elem.querySelectorAll(selector)]
+}
+
+const dom = {
+    getStaticRow: (key, value) => {
+        const envRow = templateEnvRow.content.cloneNode(true)
+        const isObj = typeof value === 'object' && value !== null
+        const values = isObj ? Object.keys(value).map((k) => `${k}: ${value[k]}`) : null
+
+        const valuesElement = htmlToElements(
+            values ? `<ul>${values.map((val) => `<li>${val}</li>`).join('')}<ul>` : `<div>${value}</div>`)[0]
+        const td = findAll('td', envRow)
+        td[0].textContent = key
+        td[1].appendChild(valuesElement)
+
+        return envRow
+    },
+    getResultTBody: ({ testId, id, log, extras, resultsTableRow, tableHtml, result, collapsed }) => {
+        const resultBody = templateResult.content.cloneNode(true)
+        resultBody.querySelector('tbody').classList.add(result.toLowerCase())
+        resultBody.querySelector('tbody').id = testId
+        resultBody.querySelector('.collapsible').dataset.id = id
+
+        resultsTableRow.forEach((html) => {
+            const t = document.createElement('template')
+            t.innerHTML = html
+            resultBody.querySelector('.collapsible').appendChild(t.content)
+        })
+
+        if (log) {
+            // Wrap lines starting with "E" with span.error to color those lines red
+            const wrappedLog = log.replace(/^E.*$/gm, (match) => `<span class="error">${match}</span>`)
+            resultBody.querySelector('.log').innerHTML = wrappedLog
+        } else {
+            resultBody.querySelector('.log').remove()
+        }
+
+        if (collapsed) {
+            resultBody.querySelector('.collapsible > td')?.classList.add('collapsed')
+            resultBody.querySelector('.extras-row').classList.add('hidden')
+        } else {
+            resultBody.querySelector('.collapsible > td')?.classList.remove('collapsed')
+        }
+
+        const media = []
+        extras?.forEach(({ name, format_type, content }) => {
+            if (['image', 'video'].includes(format_type)) {
+                media.push({ path: content, name, format_type })
+            }
+
+            if (format_type === 'html') {
+                resultBody.querySelector('.extraHTML').insertAdjacentHTML('beforeend', `<div>${content}</div>`)
+            }
+        })
+        mediaViewer.setup(resultBody, media)
+
+        // Add custom html from the pytest_html_results_table_html hook
+        tableHtml?.forEach((item) => {
+            resultBody.querySelector('td[class="extra"]').insertAdjacentHTML('beforeend', item)
+        })
+
+        return resultBody
+    },
+}
+
+module.exports = {
+    dom,
+    htmlToElements,
+    find,
+    findAll,
+}
+
+},{"./mediaviewer.js":6}],3:[function(require,module,exports){
+const { manager } = require('./datamanager.js')
+const { doSort } = require('./sort.js')
+const storageModule = require('./storage.js')
+
+const getFilteredSubSet = (filter) =>
+    manager.allData.tests.filter(({ result }) => filter.includes(result.toLowerCase()))
+
+const doInitFilter = () => {
+    const currentFilter = storageModule.getVisible()
+    const filteredSubset = getFilteredSubSet(currentFilter)
+    manager.setRender(filteredSubset)
+}
+
+const doFilter = (type, show) => {
+    if (show) {
+        storageModule.showCategory(type)
+    } else {
+        storageModule.hideCategory(type)
+    }
+
+    const currentFilter = storageModule.getVisible()
+    const filteredSubset = getFilteredSubSet(currentFilter)
+    manager.setRender(filteredSubset)
+
+    const sortColumn = storageModule.getSort()
+    doSort(sortColumn, true)
+}
+
+module.exports = {
+    doFilter,
+    doInitFilter,
+}
+
+},{"./datamanager.js":1,"./sort.js":7,"./storage.js":8}],4:[function(require,module,exports){
+const { redraw, bindEvents, renderStatic } = require('./main.js')
+const { doInitFilter } = require('./filter.js')
+const { doInitSort } = require('./sort.js')
+const { manager } = require('./datamanager.js')
+const data = JSON.parse(document.getElementById('data-container').dataset.jsonblob)
+
+function init() {
+    manager.setManager(data)
+    doInitFilter()
+    doInitSort()
+    renderStatic()
+    redraw()
+    bindEvents()
+}
+
+init()
+
+},{"./datamanager.js":1,"./filter.js":3,"./main.js":5,"./sort.js":7}],5:[function(require,module,exports){
+const { dom, find, findAll } = require('./dom.js')
+const { manager } = require('./datamanager.js')
+const { doSort } = require('./sort.js')
+const { doFilter } = require('./filter.js')
+const {
+    getVisible,
+    getCollapsedIds,
+    setCollapsedIds,
+    getSort,
+    getSortDirection,
+    possibleFilters,
+} = require('./storage.js')
+
+const removeChildren = (node) => {
+    while (node.firstChild) {
+        node.removeChild(node.firstChild)
+    }
+}
+
+const renderStatic = () => {
+    const renderEnvironmentTable = () => {
+        const environment = manager.environment
+        const rows = Object.keys(environment).map((key) => dom.getStaticRow(key, environment[key]))
+        const table = document.getElementById('environment')
+        removeChildren(table)
+        rows.forEach((row) => table.appendChild(row))
+    }
+    renderEnvironmentTable()
+}
+
+const addItemToggleListener = (elem) => {
+    elem.addEventListener('click', ({ target }) => {
+        const id = target.parentElement.dataset.id
+        manager.toggleCollapsedItem(id)
+
+        const collapsedIds = getCollapsedIds()
+        if (collapsedIds.includes(id)) {
+            const updated = collapsedIds.filter((item) => item !== id)
+            setCollapsedIds(updated)
+        } else {
+            collapsedIds.push(id)
+            setCollapsedIds(collapsedIds)
+        }
+        redraw()
+    })
+}
+
+const renderContent = (tests) => {
+    const sortAttr = getSort(manager.initialSort)
+    const sortAsc = JSON.parse(getSortDirection())
+    const rows = tests.map(dom.getResultTBody)
+    const table = document.getElementById('results-table')
+    const tableHeader = document.getElementById('results-table-head')
+
+    const newTable = document.createElement('table')
+    newTable.id = 'results-table'
+
+    // remove all sorting classes and set the relevant
+    findAll('.sortable', tableHeader).forEach((elem) => elem.classList.remove('asc', 'desc'))
+    tableHeader.querySelector(`.sortable[data-column-type="${sortAttr}"]`)?.classList.add(sortAsc ? 'desc' : 'asc')
+    newTable.appendChild(tableHeader)
+
+    if (!rows.length) {
+        const emptyTable = document.getElementById('template_results-table__body--empty').content.cloneNode(true)
+        newTable.appendChild(emptyTable)
+    } else {
+        rows.forEach((row) => {
+            if (!!row) {
+                findAll('.collapsible td:not(.col-links', row).forEach(addItemToggleListener)
+                find('.logexpander', row).addEventListener('click',
+                    (evt) => evt.target.parentNode.classList.toggle('expanded'),
+                )
+                newTable.appendChild(row)
+            }
+        })
+    }
+
+    table.replaceWith(newTable)
+}
+
+const renderDerived = () => {
+    const currentFilter = getVisible()
+    possibleFilters.forEach((result) => {
+        const input = document.querySelector(`input[data-test-result="${result}"]`)
+        input.checked = currentFilter.includes(result)
+    })
+}
+
+const bindEvents = () => {
+    const filterColumn = (evt) => {
+        const { target: element } = evt
+        const { testResult } = element.dataset
+
+        doFilter(testResult, element.checked)
+        const collapsedIds = getCollapsedIds()
+        const updated = manager.renderData.tests.map((test) => {
+            return {
+                ...test,
+                collapsed: collapsedIds.includes(test.id),
+            }
+        })
+        manager.setRender(updated)
+        redraw()
+    }
+
+    const header = document.getElementById('environment-header')
+    header.addEventListener('click', () => {
+        const table = document.getElementById('environment')
+        table.classList.toggle('hidden')
+        header.classList.toggle('collapsed')
+    })
+
+    findAll('input[name="filter_checkbox"]').forEach((elem) => {
+        elem.addEventListener('click', filterColumn)
+    })
+
+    findAll('.sortable').forEach((elem) => {
+        elem.addEventListener('click', (evt) => {
+            const { target: element } = evt
+            const { columnType } = element.dataset
+            doSort(columnType)
+            redraw()
+        })
+    })
+
+    document.getElementById('show_all_details').addEventListener('click', () => {
+        manager.allCollapsed = false
+        setCollapsedIds([])
+        redraw()
+    })
+    document.getElementById('hide_all_details').addEventListener('click', () => {
+        manager.allCollapsed = true
+        const allIds = manager.renderData.tests.map((test) => test.id)
+        setCollapsedIds(allIds)
+        redraw()
+    })
+}
+
+const redraw = () => {
+    const { testSubset } = manager
+
+    renderContent(testSubset)
+    renderDerived()
+}
+
+module.exports = {
+    redraw,
+    bindEvents,
+    renderStatic,
+}
+
+},{"./datamanager.js":1,"./dom.js":2,"./filter.js":3,"./sort.js":7,"./storage.js":8}],6:[function(require,module,exports){
+class MediaViewer {
+    constructor(assets) {
+        this.assets = assets
+        this.index = 0
+    }
+
+    nextActive() {
+        this.index = this.index === this.assets.length - 1 ? 0 : this.index + 1
+        return [this.activeFile, this.index]
+    }
+
+    prevActive() {
+        this.index = this.index === 0 ? this.assets.length - 1 : this.index -1
+        return [this.activeFile, this.index]
+    }
+
+    get currentIndex() {
+        return this.index
+    }
+
+    get activeFile() {
+        return this.assets[this.index]
+    }
+}
+
+
+const setup = (resultBody, assets) => {
+    if (!assets.length) {
+        resultBody.querySelector('.media').classList.add('hidden')
+        return
+    }
+
+    const mediaViewer = new MediaViewer(assets)
+    const container = resultBody.querySelector('.media-container')
+    const leftArrow = resultBody.querySelector('.media-container__nav--left')
+    const rightArrow = resultBody.querySelector('.media-container__nav--right')
+    const mediaName = resultBody.querySelector('.media__name')
+    const counter = resultBody.querySelector('.media__counter')
+    const imageEl = resultBody.querySelector('img')
+    const sourceEl = resultBody.querySelector('source')
+    const videoEl = resultBody.querySelector('video')
+
+    const setImg = (media, index) => {
+        if (media?.format_type === 'image') {
+            imageEl.src = media.path
+
+            imageEl.classList.remove('hidden')
+            videoEl.classList.add('hidden')
+        } else if (media?.format_type === 'video') {
+            sourceEl.src = media.path
+
+            videoEl.classList.remove('hidden')
+            imageEl.classList.add('hidden')
+        }
+
+        mediaName.innerText = media?.name
+        counter.innerText = `${index + 1} / ${assets.length}`
+    }
+    setImg(mediaViewer.activeFile, mediaViewer.currentIndex)
+
+    const moveLeft = () => {
+        const [media, index] = mediaViewer.prevActive()
+        setImg(media, index)
+    }
+    const doRight = () => {
+        const [media, index] = mediaViewer.nextActive()
+        setImg(media, index)
+    }
+    const openImg = () => {
+        window.open(mediaViewer.activeFile.path, '_blank')
+    }
+    if (assets.length === 1) {
+        container.classList.add('media-container--fullscreen')
+    } else {
+        leftArrow.addEventListener('click', moveLeft)
+        rightArrow.addEventListener('click', doRight)
+    }
+    imageEl.addEventListener('click', openImg)
+}
+
+module.exports = {
+    setup,
+}
+
+},{}],7:[function(require,module,exports){
+const { manager } = require('./datamanager.js')
+const storageModule = require('./storage.js')
+
+const genericSort = (list, key, ascending, customOrder) => {
+    let sorted
+    if (customOrder) {
+        sorted = list.sort((a, b) => {
+            const aValue = a.result.toLowerCase()
+            const bValue = b.result.toLowerCase()
+
+            const aIndex = customOrder.findIndex((item) => item.toLowerCase() === aValue)
+            const bIndex = customOrder.findIndex((item) => item.toLowerCase() === bValue)
+
+            // Compare the indices to determine the sort order
+            return aIndex - bIndex
+        })
+    } else {
+        sorted = list.sort((a, b) => a[key] === b[key] ? 0 : a[key] > b[key] ? 1 : -1)
+    }
+
+    if (ascending) {
+        sorted.reverse()
+    }
+    return sorted
+}
+
+const durationSort = (list, ascending) => {
+    const parseDuration = (duration) => {
+        if (duration.includes(':')) {
+            // If it's in the format "HH:mm:ss"
+            const [hours, minutes, seconds] = duration.split(':').map(Number)
+            return (hours * 3600 + minutes * 60 + seconds) * 1000
+        } else {
+            // If it's in the format "nnn ms"
+            return parseInt(duration)
+        }
+    }
+    const sorted = list.sort((a, b) => parseDuration(a['duration']) - parseDuration(b['duration']))
+    if (ascending) {
+        sorted.reverse()
+    }
+    return sorted
+}
+
+const doInitSort = () => {
+    const type = storageModule.getSort(manager.initialSort)
+    const ascending = storageModule.getSortDirection()
+    const list = manager.testSubset
+    const initialOrder = ['Error', 'Failed', 'Rerun', 'XFailed', 'XPassed', 'Skipped', 'Passed']
+
+    storageModule.setSort(type)
+    storageModule.setSortDirection(ascending)
+
+    if (type?.toLowerCase() === 'original') {
+        manager.setRender(list)
+    } else {
+        let sortedList
+        switch (type) {
+        case 'duration':
+            sortedList = durationSort(list, ascending)
+            break
+        case 'result':
+            sortedList = genericSort(list, type, ascending, initialOrder)
+            break
+        default:
+            sortedList = genericSort(list, type, ascending)
+            break
+        }
+        manager.setRender(sortedList)
+    }
+}
+
+const doSort = (type, skipDirection) => {
+    const newSortType = storageModule.getSort(manager.initialSort) !== type
+    const currentAsc = storageModule.getSortDirection()
+    let ascending
+    if (skipDirection) {
+        ascending = currentAsc
+    } else {
+        ascending = newSortType ? false : !currentAsc
+    }
+    storageModule.setSort(type)
+    storageModule.setSortDirection(ascending)
+
+    const list = manager.testSubset
+    const sortedList = type === 'duration' ? durationSort(list, ascending) : genericSort(list, type, ascending)
+    manager.setRender(sortedList)
+}
+
+module.exports = {
+    doInitSort,
+    doSort,
+}
+
+},{"./datamanager.js":1,"./storage.js":8}],8:[function(require,module,exports){
+const possibleFilters = [
+    'passed',
+    'skipped',
+    'failed',
+    'error',
+    'xfailed',
+    'xpassed',
+    'rerun',
+]
+
+const getVisible = () => {
+    const url = new URL(window.location.href)
+    const settings = new URLSearchParams(url.search).get('visible')
+    const lower = (item) => {
+        const lowerItem = item.toLowerCase()
+        if (possibleFilters.includes(lowerItem)) {
+            return lowerItem
+        }
+        return null
+    }
+    return settings === null ?
+        possibleFilters :
+        [...new Set(settings?.split(',').map(lower).filter((item) => item))]
+}
+
+const hideCategory = (categoryToHide) => {
+    const url = new URL(window.location.href)
+    const visibleParams = new URLSearchParams(url.search).get('visible')
+    const currentVisible = visibleParams ? visibleParams.split(',') : [...possibleFilters]
+    const settings = [...new Set(currentVisible)].filter((f) => f !== categoryToHide).join(',')
+
+    url.searchParams.set('visible', settings)
+    window.history.pushState({}, null, unescape(url.href))
+}
+
+const showCategory = (categoryToShow) => {
+    if (typeof window === 'undefined') {
+        return
+    }
+    const url = new URL(window.location.href)
+    const currentVisible = new URLSearchParams(url.search).get('visible')?.split(',').filter(Boolean) ||
+        [...possibleFilters]
+    const settings = [...new Set([categoryToShow, ...currentVisible])]
+    const noFilter = possibleFilters.length === settings.length || !settings.length
+
+    noFilter ? url.searchParams.delete('visible') : url.searchParams.set('visible', settings.join(','))
+    window.history.pushState({}, null, unescape(url.href))
+}
+
+const getSort = (initialSort) => {
+    const url = new URL(window.location.href)
+    let sort = new URLSearchParams(url.search).get('sort')
+    if (!sort) {
+        sort = initialSort || 'result'
+    }
+    return sort
+}
+
+const setSort = (type) => {
+    const url = new URL(window.location.href)
+    url.searchParams.set('sort', type)
+    window.history.pushState({}, null, unescape(url.href))
+}
+
+const getCollapsedCategory = (renderCollapsed) => {
+    let categories
+    if (typeof window !== 'undefined') {
+        const url = new URL(window.location.href)
+        const collapsedItems = new URLSearchParams(url.search).get('collapsed')
+        switch (true) {
+        case !renderCollapsed && collapsedItems === null:
+            categories = ['passed']
+            break
+        case collapsedItems?.length === 0 || /^["']{2}$/.test(collapsedItems):
+            categories = []
+            break
+        case /^all$/.test(collapsedItems) || collapsedItems === null && /^all$/.test(renderCollapsed):
+            categories = [...possibleFilters]
+            break
+        default:
+            categories = collapsedItems?.split(',').map((item) => item.toLowerCase()) || renderCollapsed
+            break
+        }
+    } else {
+        categories = []
+    }
+    return categories
+}
+
+const getSortDirection = () => JSON.parse(sessionStorage.getItem('sortAsc')) || false
+const setSortDirection = (ascending) => sessionStorage.setItem('sortAsc', ascending)
+
+const getCollapsedIds = () => JSON.parse(sessionStorage.getItem('collapsedIds')) || []
+const setCollapsedIds = (list) => sessionStorage.setItem('collapsedIds', JSON.stringify(list))
+
+module.exports = {
+    getVisible,
+    hideCategory,
+    showCategory,
+    getCollapsedIds,
+    setCollapsedIds,
+    getSort,
+    setSort,
+    getSortDirection,
+    setSortDirection,
+    getCollapsedCategory,
+    possibleFilters,
+}
+
+},{}]},{},[4]);
+    </script>
+  </footer>
+</html>
