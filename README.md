@@ -290,7 +290,7 @@ headless, uncomment `options.add_argument("--headless=new")` in `session_test.py
 | Variable | Meaning |
 |----------|---------|
 | `HEADLESS=1` | Run the portal suite headless. Default is a visible browser. |
-| `PORTAL_CLIENT`, `PORTAL_ORG` | Which client/org to create the portal under. |
+| `PORTAL_CLIENT`, `PORTAL_ORG` / `PORTAL_ORG_PROD` | Which client/org to create the portal under (`PORTAL_ORG` on dev, `PORTAL_ORG_PROD` on prod). |
 | `PORTAL_LOGO_PATH` | Header-menu logo image. Must be **under 200 KB**. Falls back to `HEADSHOT_PATH`. |
 
 ### Standard pytest flags worth knowing

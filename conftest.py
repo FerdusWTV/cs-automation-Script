@@ -5,6 +5,12 @@ import pytest
 import selenium
 from dotenv import load_dotenv
 
+# The flows print ✅ / ⚠️. On Windows, a redirected or piped stdout defaults to
+# cp1252, which can't encode them and raises UnicodeEncodeError mid-test.
+for _stream in (sys.stdout, sys.stderr):
+    if hasattr(_stream, "reconfigure") and (_stream.encoding or "").lower() != "utf-8":
+        _stream.reconfigure(encoding="utf-8", errors="replace")
+
 # The five types session_test.py builds one webcast of each. These belong to the
 # NON-EMBEDDED suite only: an embedded session is always 'Video only' (the app
 # filters the type list down to a single option), so 03_embedded_test.py builds
@@ -143,6 +149,9 @@ def config(request):
         # the dev portal name when TARGET_PORTAL_PROD isn't set.
         "target_portal": env("TARGET_PORTAL") or os.getenv("TARGET_PORTAL"),
         "web": os.getenv("WEB", ""),
+        # Organization the portal suite (02) works in: PORTAL_ORG on dev,
+        # PORTAL_ORG_PROD on prod. Unset = the account's own / first org.
+        "portal_org": env("PORTAL_ORG"),
 
         # Local media used by the content uploads
         "slide_path": os.getenv("SLIDE_PATH"),

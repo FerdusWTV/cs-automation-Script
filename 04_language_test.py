@@ -34,7 +34,8 @@ Run:
     ..\\venv\\Scripts\\pytest -v 04_language_test.py --testrail-out=language_results.json
 
 Optional .env / environment overrides:
-    LANG_ORG            organization to open (super-admin only; default: first card)
+    LANG_ORG            organization to open, found via the org search bar (admin
+                        accounts only - an org user stays in its own org; default: first card)
     LANG_DEFAULT        client default language  (default: Italian)
     LANG_ADDITIONAL     comma-separated additional languages (default: English,German)
     LANG_SESSION_URL    full URL of an EXISTING session page. Without it the
@@ -58,6 +59,7 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
+import org_flow
 import ui
 
 # ----------------------- LANGUAGE DATA --------------------
@@ -489,35 +491,12 @@ def test_02_open_client_list_and_snapshot_baseline(driver):
             time.sleep(4)
 
     # Where 'Organization' lands depends on the account's role: an org-scoped
-    # account goes straight to its client list, an ADMIN gets the org list first.
-    org_cards = driver.find_elements(By.CSS_SELECTOR, ".org-card")
-    if org_cards and not driver.find_elements(By.CSS_SELECTOR, ".client-list-table-container"):
-        wanted = os.getenv("LANG_ORG")
-        if wanted:
-            matches = driver.find_elements(
-                By.XPATH,
-                f"//div[contains(@class,'org-card')][.//h6[normalize-space()='{wanted}']]"
-                "//div[contains(@class,'org-card-arrow')]",
-            )
-            if not matches:
-                pytest.fail(f"LANG_ORG='{wanted}' is not on the organization list. "
-                            f"{_dump(driver, 'lang_org_list')}")
-            card = matches[0]
-        else:
-            card = driver.find_element(By.CSS_SELECTOR, ".org-card .org-card-arrow")
-        _click(driver, card)
-        _wait(driver, 20).until(EC.url_contains("/organization/client"))
-        time.sleep(2)
-
+    # account goes straight to its client list, an ADMIN searches the org list.
     try:
-        wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, ".client-list-table-container")))
-    except TimeoutException:
-        pytest.fail(f"Client list never rendered (at {driver.current_url}). "
+        CONTEXT["org"] = org_flow.open_organization(driver, os.getenv("LANG_ORG"))
+    except (AssertionError, TimeoutException) as exc:
+        pytest.fail(f"Could not open the client list (at {driver.current_url}): {exc} "
                     f"{_dump(driver, 'lang_client_list')}")
-    time.sleep(3)
-
-    shown_org = driver.find_elements(By.CSS_SELECTOR, ".client-org-name")
-    CONTEXT["org"] = shown_org[0].text.strip() if shown_org else None
     CLIENT_LIST_URL["url"] = driver.current_url
     CLIENT_BASELINE.extend(_client_names(driver))
     print(f"PASS: Client list for organization '{CONTEXT['org']}': {driver.current_url}")
@@ -609,14 +588,15 @@ def test_06_portal_default_language_cascades_and_is_read_only(driver):
     _wait(driver).until(EC.url_contains("/new/branding"))
     time.sleep(3)
 
-    # The organization select only renders for ADMIN / SUPER_ADMIN.
-    if driver.find_elements(
-        By.XPATH,
-        "//div[contains(@class,'ant-select')][.//span[normalize-space()='Select organization']]",
-    ):
-        _pick_antd_option(driver, "Select organization", os.getenv("LANG_ORG") or CONTEXT["org"])
-        time.sleep(3)
-    _pick_antd_option(driver, "Select client", CLIENT_NAME)
+    # The organization has to be chosen again here; its select only renders for
+    # ADMIN / SUPER_ADMIN.
+    try:
+        if org_flow.has_branding_org_select(driver):
+            org_flow.pick_branding_option(driver, "Organization", os.getenv("LANG_ORG") or CONTEXT["org"])
+            time.sleep(3)
+        org_flow.pick_branding_option(driver, "Client", CLIENT_NAME)
+    except (AssertionError, TimeoutException) as exc:
+        pytest.fail(f"Org/client selection failed: {exc} {_dump(driver, 'lang_branding_select')}")
     time.sleep(3)
 
     field = _wait(driver).until(EC.presence_of_element_located((By.XPATH, DEFAULT_LANGUAGE_INPUT)))
@@ -693,30 +673,12 @@ def test_10_save_portal_with_its_languages(driver, config):
     if os.path.getsize(logo_path) > 200 * 1024:
         pytest.fail(f"Logo '{logo_path}' exceeds the app's 200 KB limit - pick a smaller image.")
 
-    # Header menu logo is mandatory; react-dropzone's file input is hidden but writable.
-    file_input = wait.until(EC.presence_of_element_located(
-        (By.CSS_SELECTOR, ".dropzone input[type='file']")
-    ))
-    driver.execute_script("arguments[0].style.display='block';arguments[0].style.opacity=1;",
-                          file_input)
-    file_input.send_keys(os.path.abspath(logo_path))
-
-    # The crop modal only yields an image after a real crop interaction -
-    # `onComplete` never fires from the auto-centered initial crop alone.
-    wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, ".crop-image-modal")))
-    handle = wait.until(EC.presence_of_element_located(
-        (By.CSS_SELECTOR, ".ReactCrop__drag-handle.ord-se")
-    ))
-    ActionChains(driver).click_and_hold(handle).move_by_offset(-12, -9).release().perform()
-    time.sleep(2)
-    _click(driver, wait.until(EC.element_to_be_clickable(
-        (By.XPATH, "//div[contains(@class,'crop-image-modal')]//button[normalize-space()='Set']")
-    )))
+    # Header menu logo is mandatory; Material-template orgs also need the
+    # registration/login logo.
     try:
-        wait.until(EC.invisibility_of_element_located((By.CSS_SELECTOR, ".crop-image-modal")))
-    except TimeoutException:
-        pytest.fail(f"Crop modal never closed - 'Set' had no cropped image. "
-                    f"{_dump(driver, 'lang_crop')}")
+        org_flow.upload_branding_logos(driver, logo_path)
+    except (AssertionError, TimeoutException) as exc:
+        pytest.fail(f"Logo upload failed: {exc} {_dump(driver, 'lang_crop')}")
 
     _click(driver, wait.until(EC.element_to_be_clickable(
         (By.CSS_SELECTOR, "button[data-testid='branding-next-button']")

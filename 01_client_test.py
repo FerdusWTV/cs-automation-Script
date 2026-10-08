@@ -21,7 +21,8 @@ Run:
     ..\\venv\\Scripts\\pytest -v client_test.py --base-url=http://localhost:3000
 
 Optional .env / environment overrides:
-    CLIENT_ORG        organization to open (super-admin only; default: first card)
+    CLIENT_ORG        organization to open, found via the org search bar (admin
+                      accounts only - an org user stays in its own org; default: first card)
     CLIENT_LANGUAGE   language option label   (default: English)
 """
 
@@ -38,6 +39,8 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.common.exceptions import TimeoutException
+
+import org_flow
 
 # ----------------------- RUN STATE ------------------------
 
@@ -282,36 +285,18 @@ def test_02_open_client_list_and_snapshot_baseline(driver, base_url):
             time.sleep(4)
     time.sleep(3)
 
-    # ADMIN/SUPER_ADMIN land on the organization cards and have to pick one first;
-    # an org admin is dropped straight onto their own client table.
-    if driver.find_elements(By.CSS_SELECTOR, ".org-card"):
-        target_org = os.getenv("CLIENT_ORG")
-        if target_org:
-            arrow = wait.until(EC.presence_of_element_located((
-                By.XPATH,
-                f"//div[contains(@class,'org-card')][.//h6[normalize-space()='{target_org}']]"
-                f"//div[contains(@class,'org-card-arrow')]",
-            )))
-        else:
-            arrows = wait.until(lambda d: d.find_elements(
-                By.CSS_SELECTOR, ".org-card .org-card-arrow"
-            ) or False)
-            arrow = arrows[0]
-        _click(driver, arrow)
-        wait.until(EC.url_contains("/organization/client"))
-
+    # ADMIN/SUPER_ADMIN search the organization list for CLIENT_ORG; an org user
+    # is dropped straight onto their own client table (see org_flow).
     try:
-        wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, ".client-list-table-container")))
-    except TimeoutException:
+        org_name = org_flow.open_organization(driver, os.getenv("CLIENT_ORG"))
+    except (AssertionError, TimeoutException) as exc:
         pytest.fail(
-            f"Client list never rendered (at {driver.current_url}). "
+            f"Could not open the client list (at {driver.current_url}): {exc} "
             f"{_dump(driver, 'client_list')}"
         )
-    time.sleep(3)
 
     CLIENT_LIST_URL["url"] = driver.current_url
     BASELINE.extend(_client_names(driver))
-    org_name = driver.find_element(By.CSS_SELECTOR, ".client-org-name").text.strip()
     print(f"PASS: Client list for '{org_name}': {driver.current_url}")
     print(f"   Baseline - {len(BASELINE)} existing client(s) on this page, all protected:")
     for name in BASELINE:
