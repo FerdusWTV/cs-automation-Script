@@ -9,8 +9,8 @@ admin drops the portal list and renders the session list directly, with a
 type list to VIDEO_ONLY_TYPES, leaving one option, and the wizard posts
 webcastType 'video' on its own. So this suite creates exactly ONE session and
 never sets a type -- there is deliberately no per-type matrix here like the
-WEBCAST_MATRIX in session_test.py, which builds one webcast of each of the five
-types. The only type assertion is that the single offered option is the one
+WEBCAST_MATRIX in session_test.py, which builds each of the five types twice
+(eCDN None and Kollective). The only type assertion is that the single offered option is the one
 already selected.
 
 The tests run in order and share one browser session:

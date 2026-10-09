@@ -8,16 +8,19 @@ The end-to-end shape of a webcast:
 
     create_webcast()          # Sessions -> new webcast wizard
     activate_and_open_manage()# flip the Activate switch, open Manage
+    set_ecdn()                # Language & ECDN -> eCDN combobox (Kollective / None)
     set_webcast_type()        # Webcast details -> type combobox
     upload_content()          # Content -> per-type files, each with its own Save
-    configure_layout()        # Webcast Layout -> title/description/toggles
+    configure_layout()        # Webcast Layout -> every feature on + filled, custom tab
 """
 
+import os
 import time
 
 import pytest
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
@@ -206,6 +209,56 @@ def set_webcast_type(driver, wait, type_label):
     ui.wait_for_swal(driver, "webcast_type_save", timeout=60, expect="success")
     print(f"  ✅ Webcast type set to '{type_label}'.")
     time.sleep(2)
+
+
+# ==========================================================================
+# Language & ECDN
+# ==========================================================================
+
+ECDN_NONE = "None"
+
+
+def set_ecdn(driver, wait, vendor, timeout=20):
+    """Open 'Language & ECDN', pick the eCDN vendor (e.g. 'Kollective' or 'None'), Save.
+
+    The options are fetched after the tab mounts, so the open dropdown is
+    polled until the vendor shows up. 'Kollective' never appearing means the
+    session's organization doesn't have Kollective enabled — that fails loudly
+    rather than silently saving 'None'.
+    """
+    ui.click(driver, wait, L.manage_tab("Language & ECDN"), settle=2)
+    ui.native_click(driver, wait, L.ECDN_SELECTOR)
+
+    deadline = time.monotonic() + timeout
+    while True:
+        options = {o.get_attribute("title"): o for o in ui.find_all(driver, L.ECDN_OPEN_OPTIONS)}
+        match = next((o for t, o in options.items() if t and t.casefold() == vendor.casefold()), None)
+        if match is not None:
+            break
+        if time.monotonic() >= deadline:
+            pytest.fail(f"eCDN option '{vendor}' not offered — dropdown shows {list(options)}. "
+                        "Is it enabled for this organization?")
+        time.sleep(1)
+
+    ui.js_click(driver, match)
+    time.sleep(1)
+
+    selected = driver.find_element(By.XPATH, L.ECDN_SELECTED).get_attribute("title")
+    if selected.casefold() != vendor.casefold():
+        pytest.fail(f"eCDN not selected: wanted '{vendor}', selector shows '{selected}'.")
+
+    ui.click(driver, wait, L.ECDN_SAVE_BTN, scroll=True)
+    ui.wait_for_swal(driver, "ecdn_save", timeout=60, expect="success")
+    time.sleep(2)
+
+    # Leaving the tab unmounts it; coming back re-seeds the select from the
+    # saved session (`kollective` flag), so this checks what the server kept.
+    ui.click(driver, wait, L.manage_tab("Webcast details"), settle=2)
+    ui.click(driver, wait, L.manage_tab("Language & ECDN"), settle=3)
+    saved = ui.find(wait, L.ECDN_SELECTED).get_attribute("title")
+    if saved.casefold() != vendor.casefold():
+        pytest.fail(f"eCDN did not persist: saved '{vendor}', page now shows '{saved}'.")
+    print(f"  ✅ eCDN set to '{saved}' (verified after re-fetch).")
 
 
 # ==========================================================================
@@ -470,40 +523,151 @@ def _dump_dropzone_failure(driver, file_key):
 # Webcast layout
 # ==========================================================================
 
-# Positional toggle switches on the layout page — they carry no stable id.
-LAYOUT_SWITCHES = {
-    "axe_mode":    1,  # only enabled for the AxE webcast type
-    "logo":        2,
-    "qna":         4,
-    "slider_list": 6,
-}
-
 PREVIEW_TITLE_TEXT = "Automated Preview Text Title!"
 PREVIEW_DESC_TEXT = "This is Automation test preview text for testing."
 
+DESCRIPTION_TAB_TEXT = "Automated Description"
+DESCRIPTION_HTML = "<h2>Automated Description</h2><p>This session was set up by <b>automation</b>.</p>"
+SLIDO_TAB_TEXT = "Automated Slido"
+CUSTOM_TAB_TEXT = "Automated Custom Tab"
+CUSTOM_TAB_HTML = "<h2>Automated Custom Tab</h2><p>Custom tab content added by <b>automation</b>.</p>"
 
-def configure_layout(driver, wait, type_key=None):
-    """Set the layout title, description and toggles, save, then go Back."""
-    ui.click(driver, wait, L.WEBCAST_LAYOUT_BTN)
+# Every switch under 'Webcast Features', top to bottom. All of them end up ON.
+FEATURE_SWITCHES = [
+    "Enable Logo",
+    "Enable Description",
+    "Enable Q&A",
+    "Enable Downloads",
+    "Enable Slider List",
+    "Enable Slido",
+]
 
-    if type_key == "AxE":
-        ui.click(driver, wait, L.layout_switch(LAYOUT_SWITCHES["axe_mode"]), scroll=True, center=False)
-        print(f"  Clicked AxE layout switch ({L.layout_switch(LAYOUT_SWITCHES['axe_mode'])}).")
 
-    ui.type_text(driver, wait, L.LAYOUT_TITLE_INPUT, PREVIEW_TITLE_TEXT, clear=True, scroll=True)
-    ui.type_text(driver, wait, L.LAYOUT_DESC_INPUT, PREVIEW_DESC_TEXT, clear=True, scroll=True)
+def configure_layout(driver, wait, config, type_key=None):
+    """Turn on and fill every Webcast Layout feature, save, verify, then go Back.
 
-    for name in ("logo", "qna", "slider_list"):
-        ui.click(driver, wait, L.layout_switch(LAYOUT_SWITCHES[name]), scroll=True, center=False)
+    Covers 'Update Content' (title + description), every 'Webcast Features'
+    switch with its fields — Description tab label + HTML, a Downloads
+    document, Slido tab label + URL — and one Custom Tab with label + HTML.
+
+    Switches are found by label and only clicked when OFF: they are toggles, so
+    blindly clicking one that a fresh layout already has on (Logo, Description)
+    would switch it off. After saving, the page is reloaded and everything is
+    checked against what the server sent back.
+    """
+    _open_layout(driver, wait)
+
+    fields = _layout_fields(config)
+    _ensure_switch_on(driver, wait, "Update Content")
+    for label in FEATURE_SWITCHES:
+        _ensure_switch_on(driver, wait, label)
+    if not ui.exists(driver, L.CUSTOM_TAB_HEADING):
+        ui.click(driver, wait, L.ADD_CUSTOM_TAB_BTN, scroll=True, settle=1)
+
+    doc_path = config["download_doc_path"]
+    ui.find(driver, L.DOWNLOADS_FILE_INPUT, timeout=15).send_keys(doc_path)
+    doc_name = os.path.basename(doc_path)
+    ui.find(driver, L.downloaded_document(doc_name), timeout=10)
+    print(f"  📎 Attached download document '{doc_name}'.")
+
+    # Filled last, and re-checked: the page re-seeds Title/Description from the
+    # server once its data lands, which can wipe text typed a moment earlier.
+    for xpath, text in fields.items():
+        _fill(driver, wait, xpath, text)
+    for xpath, text in fields.items():
+        if ui.find(driver, xpath).get_attribute("value") != text:
+            _fill(driver, wait, xpath, text)
 
     ui.click(driver, wait, L.LAYOUT_SAVE_BTN, scroll=True, center=False, pause=0)
-    ui.wait_for_swal(driver, "layout_save", timeout=60)
+    ui.wait_for_swal(driver, "layout_save", timeout=60, expect="success")
     print("  ✅ Layout saved.")
+    time.sleep(3)
 
-    time.sleep(1)
-    ui.click(driver, wait, L.BACK_BTN)
+    _verify_layout(driver, wait, fields, doc_name)
+
+    ui.click(driver, wait, L.BACK_BTN, scroll=True)
     print("  ↩️  Clicked Back — returned to Sessions page.")
     time.sleep(2)
+
+
+def _open_layout(driver, wait):
+    """Open the Webcast Layout tab and give its saved layout time to load."""
+    ui.click(driver, wait, L.manage_tab("Webcast Layout"), settle=1)
+    ui.find(wait, L.LAYOUT_FEATURES_HEADING)
+    time.sleep(3)  # the saved layout is fetched after mount and re-seeds the form
+
+
+def _layout_fields(config):
+    """{input xpath: text} for every text field the layout fills."""
+    return {
+        L.LAYOUT_TITLE_INPUT: PREVIEW_TITLE_TEXT,
+        L.LAYOUT_DESC_INPUT: PREVIEW_DESC_TEXT,
+        L.layout_tab_label_input(L.DESCRIPTION_TAB_LABEL): DESCRIPTION_TAB_TEXT,
+        L.layout_html_body(L.DESCRIPTION_TAB_LABEL): DESCRIPTION_HTML,
+        L.SLIDO_TAB_LABEL_INPUT: SLIDO_TAB_TEXT,
+        L.SLIDO_URL_INPUT: config["slido_url"],
+        L.layout_tab_label_input(L.CUSTOM_TAB_LABEL): CUSTOM_TAB_TEXT,
+        L.layout_html_body(L.CUSTOM_TAB_LABEL): CUSTOM_TAB_HTML,
+    }
+
+
+def _ensure_switch_on(driver, wait, label):
+    """Click the switch beside `label` only if it is currently off."""
+    xpath = L.layout_switch(label)
+    switch = ui.find(wait, xpath)
+    if switch.get_attribute("aria-checked") == "true":
+        return
+    ui.scroll_into_view(driver, switch)
+    ui.js_click(driver, switch)
+    WebDriverWait(driver, 5).until(
+        lambda d: d.find_element(By.XPATH, xpath).get_attribute("aria-checked") == "true",
+        f"'{label}' did not switch on",
+    )
+    time.sleep(0.5)  # the section it reveals renders next
+
+
+def _fill(driver, wait, xpath, text):
+    """Replace a React-controlled field's text. `clear()` bypasses React's
+    onChange, so the old value would come back — select-all + type instead."""
+    element = ui.find(wait, xpath)
+    ui.scroll_into_view(driver, element)
+    element.send_keys(Keys.CONTROL, "a")
+    element.send_keys(Keys.DELETE)
+    element.send_keys(text)
+
+
+def _verify_layout(driver, wait, fields, doc_name):
+    """Reopen the layout and check every switch and field came back.
+
+    Inactive Manage tabs are unmounted, so leaving for 'Webcast details' and
+    returning remounts the layout, which re-fetches it from the server. (A
+    browser refresh would also work in principle, but the Manage page doesn't
+    reliably come back from a hard reload.)
+    """
+    ui.click(driver, wait, L.manage_tab("Webcast details"), settle=2)
+    _open_layout(driver, wait)
+
+    problems = []
+    for label in ["Update Content", *FEATURE_SWITCHES]:
+        state = ui.find(wait, L.layout_switch(label)).get_attribute("aria-checked")
+        if state != "true":
+            problems.append(f"'{label}' is off")
+    if not ui.exists(driver, L.CUSTOM_TAB_HEADING):
+        problems.append("Custom Tab is missing")
+    if not ui.exists(driver, L.downloaded_document(doc_name)):
+        problems.append(f"download '{doc_name}' not listed")
+    for xpath, text in fields.items():
+        if not ui.exists(driver, xpath):
+            problems.append(f"field missing: {xpath}")
+            continue
+        value = ui.find(driver, xpath).get_attribute("value")
+        if value != text:
+            problems.append(f"{xpath} = {value!r}, expected {text!r}")
+
+    if problems:
+        driver.save_screenshot("failure_layout_verify.png")
+        pytest.fail("Webcast Layout did not persist after save:\n  - " + "\n  - ".join(problems))
+    print("  ✅ Layout verified after re-fetch — all features on, all fields filled.")
 
 
 # ==========================================================================

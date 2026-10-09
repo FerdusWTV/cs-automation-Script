@@ -109,6 +109,24 @@ def webcast_type_option(label):
 
 
 # --------------------------------------------------------------------------
+# Language & ECDN panel — the eCDN combobox at the top
+# --------------------------------------------------------------------------
+# Sessions use CustomEventLanguageECDN.js, which offers 'Kollective' only when
+# GET /session/{id}/kollective says the session's organization has it enabled
+# (Organization -> Edit -> 'Enable Kollective'); otherwise just 'None'.
+ECDN_SELECTOR = "//input[@id='eCDN']/ancestor::div[contains(@class,'ant-select-selector')][1]"
+ECDN_SELECTED = f"{ECDN_SELECTOR}//span[contains(@class,'ant-select-selection-item')]"
+# Exact class token: a bare contains() also matches the inner
+# 'ant-select-item-option-content' div, double-counting every option.
+ECDN_OPEN_OPTIONS = (
+    "//div[contains(@class,'ant-select-dropdown')"
+    " and not(contains(@class,'ant-select-dropdown-hidden'))]"
+    "//div[contains(concat(' ', @class, ' '), ' ant-select-item-option ')]"
+)
+ECDN_SAVE_BTN = "//input[@id='eCDN']/ancestor::form//button[normalize-space()='Save']"
+
+
+# --------------------------------------------------------------------------
 # Content panel
 # --------------------------------------------------------------------------
 # File inputs are identified by their `accept` attribute rather than by index,
@@ -184,17 +202,53 @@ def status_option(state):
 # --------------------------------------------------------------------------
 # Webcast Layout panel
 # --------------------------------------------------------------------------
+# 'Update Content' heading/description, shown while that switch is on.
 LAYOUT_TITLE_INPUT = "//input[@placeholder='Title']"
 LAYOUT_DESC_INPUT = "//input[@placeholder='Description']"
+LAYOUT_FEATURES_HEADING = "//h4[normalize-space()='Webcast Features']"
 
 
-def layout_switch(index):
-    """Nth toggle switch on the layout page (1-based).
+def layout_switch(label):
+    """The toggle next to `label` ('Enable Logo', 'Update Content', 'Single Window', ...).
 
-    These are positional because the switches carry no stable id or label; see
-    LAYOUT_SWITCHES in webcast_flow.py for what each index means.
+    Each switch sits beside a <span> carrying its label. Matching on that label
+    rather than position matters: 'Single Window' only renders for Audio &
+    slides and would shift every index after it.
     """
-    return f"(//button[@role='switch'])[{index}]"
+    return f"//span[normalize-space()='{label}']/following-sibling::button[@role='switch'][1]"
+
+
+# Description and Custom Tab share RichTextTabFields: a labelled tab-label input,
+# then an HTML <textarea> in the next div. The Slido labels end in a red '*',
+# so 'Tab Label' (custom tab) and 'Tab Label *' (Slido) never collide.
+def layout_tab_label_input(label):
+    return f"//label[normalize-space()='{label}']/following-sibling::input[1]"
+
+
+def layout_html_body(label):
+    return f"//label[normalize-space()='{label}']/parent::div/following-sibling::div[1]//textarea"
+
+
+DESCRIPTION_TAB_LABEL = "Description Tab Label"
+CUSTOM_TAB_LABEL = "Tab Label"
+SLIDO_TAB_LABEL_INPUT = layout_tab_label_input("Tab Label *")
+SLIDO_URL_INPUT = layout_tab_label_input("Slido URL *")
+ADD_CUSTOM_TAB_BTN = "//button[normalize-space()='+ Add Custom Tab']"
+CUSTOM_TAB_HEADING = "//span[normalize-space()='Custom Tab']"
+
+# The Downloads dropzone renders right after the 'Enable Downloads' row.
+DOWNLOADS_FILE_INPUT = (
+    "//span[normalize-space()='Enable Downloads']/parent::div"
+    "/following-sibling::div[1]//input[@type='file']"
+)
+
+
+def downloaded_document(file_name):
+    """A row in 'Uploaded Documents' (saved names carry a '<timestamp>_' prefix)."""
+    return (
+        "//h6[normalize-space()='Uploaded Documents']/parent::div"
+        f"/div[contains(normalize-space(), '{file_name}')]"
+    )
 
 
 # --------------------------------------------------------------------------
