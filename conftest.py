@@ -5,11 +5,20 @@ import pytest
 import selenium
 from dotenv import load_dotenv
 
+# The flows print ✅ / ⚠️. On Windows, a redirected or piped stdout defaults to
+# cp1252, which can't encode them and raises UnicodeEncodeError mid-test.
+for _stream in (sys.stdout, sys.stderr):
+    if hasattr(_stream, "reconfigure") and (_stream.encoding or "").lower() != "utf-8":
+        _stream.reconfigure(encoding="utf-8", errors="replace")
+
 # The five types session_test.py builds one webcast of each. These belong to the
 # NON-EMBEDDED suite only: an embedded session is always 'Video only' (the app
 # filters the type list down to a single option), so 03_embedded_test.py builds
 # exactly one session and never sets a type.
 WEBCAST_TYPES = ["VxS", "AxS", "V", "A", "AxE"]
+
+# Each type is built twice: once with the Kollective eCDN, once without.
+ECDN_MODES = ["both", "kollective", "none"]
 
 
 # -----------------------------
@@ -41,6 +50,16 @@ def pytest_addoption(parser):
             f"of all five. One of: {', '.join(WEBCAST_TYPES)}. Omit to create the "
             "full set. Has no effect on 03_embedded_test.py, where a session is "
             "always 'Video only'."
+        ),
+    )
+    parser.addoption(
+        "--ecdn",
+        action="store",
+        default="both",
+        choices=ECDN_MODES,
+        help=(
+            "session_test.py only. Which eCDN variant of each webcast to build: "
+            "'kollective', 'none', or 'both' (default — one of each)."
         ),
     )
     parser.addoption(
@@ -84,13 +103,19 @@ def pytest_addoption(parser):
 
 # ----------------------- ENV ------------------------
 
-# Default webcast titles, one per type. NEW_WEBCAST_TITLE_1..5 override them.
+# Default webcast titles: 1..5 are the eCDN 'None' set, 6..10 the Kollective
+# set, one per type in the same order. NEW_WEBCAST_TITLE_1..10 override them.
 DEFAULT_TITLES = [
     "Automated Webcast VxS - 001",
     "Automated Webcast AxS - 002",
     "Automated Webcast V - 003",
     "Automated Webcast A - 004",
     "Automated Webcast AxE - 005",
+    "Automated Webcast VxS Kollective - 006",
+    "Automated Webcast AxS Kollective - 007",
+    "Automated Webcast V Kollective - 008",
+    "Automated Webcast A Kollective - 009",
+    "Automated Webcast AxE Kollective - 010",
 ]
 
 # The exact labels shown in the 'Webcast details' type dropdown. There is no
@@ -143,6 +168,9 @@ def config(request):
         # the dev portal name when TARGET_PORTAL_PROD isn't set.
         "target_portal": env("TARGET_PORTAL") or os.getenv("TARGET_PORTAL"),
         "web": os.getenv("WEB", ""),
+        # Organization the portal suite (02) works in: PORTAL_ORG on dev,
+        # PORTAL_ORG_PROD on prod. Unset = the account's own / first org.
+        "portal_org": env("PORTAL_ORG"),
 
         # Local media used by the content uploads
         "slide_path": os.getenv("SLIDE_PATH"),
@@ -150,6 +178,10 @@ def config(request):
         "headshot_path": os.getenv("HEADSHOT_PATH"),
         "headshot_paths": headshot_paths,
         "audio_path": os.getenv("AUDIO_PATH"),
+        # Webcast Layout: the 'Enable Downloads' document (pdf/ppt, max 20 MB;
+        # defaults to the slide PDF) and the 'Enable Slido' URL.
+        "download_doc_path": os.getenv("DOWNLOAD_DOC_PATH") or os.getenv("SLIDE_PATH"),
+        "slido_url": os.getenv("SLIDO_URL", "https://app.sli.do/event/automation-test"),
 
         # Webcasts to build
         "new_webcast_title": os.getenv("NEW_WEBCAST_TITLE"),
@@ -159,6 +191,20 @@ def config(request):
             for i, default in enumerate(DEFAULT_TITLES, start=1)
         ],
         "single_webcast_type": request.config.getoption("--webcast-type"),
+        "ecdn_mode": request.config.getoption("--ecdn"),
+        # The eCDN option label the Kollective webcasts pick.
+        "kollective_label": os.getenv("ECDN_KOLLECTIVE_LABEL", "Kollective"),
+        # Portal for the Kollective webcasts: it must sit in an org with
+        # Kollective enabled (KOLLECTIVE_ORG). Unset = TARGET_PORTAL. Reached
+        # with the admin account, since the org account is confined to its org.
+        "kollective_org": env("KOLLECTIVE_ORG"),
+        "kollective_client": env("KOLLECTIVE_CLIENT"),
+        "kollective_portal": env("KOLLECTIVE_PORTAL"),
+        "kollective_account": {
+            "url_org": env("URL"),
+            "email_org": env("KOLLECTIVE_EMAIL") or env("EMAIL"),
+            "password_org": env("KOLLECTIVE_PASSWORD") or env("PASSWORD"),
+        },
 
         # Embedded sessions (03_embedded_test.py). `embed_org` is optional —
         # left unset, the suite opens whichever organization comes first.

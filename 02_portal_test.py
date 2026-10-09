@@ -24,12 +24,13 @@ import pytest
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.common.exceptions import TimeoutException
+
+import org_flow
 
 # ----------------------- RUN STATE ------------------------
 
@@ -100,45 +101,6 @@ def _dump(driver, label):
 def _click(driver, element):
     """JS click - antd overlays and toasts routinely intercept native clicks."""
     driver.execute_script("arguments[0].click();", element)
-
-
-def _pick_antd_option(driver, placeholder, wanted=None):
-    """Open the antd Select carrying `placeholder` and choose an option.
-
-    `wanted` selects by exact label; None takes the first available option.
-    Returns the chosen label.
-    """
-    wait = _wait(driver)
-    container = wait.until(EC.presence_of_element_located((
-        By.XPATH,
-        f"//div[contains(@class,'ant-select')][.//span[normalize-space()='{placeholder}']]",
-    )))
-    driver.execute_script("arguments[0].scrollIntoView({block:'center'});", container)
-    time.sleep(1)
-
-    # antd opens its dropdown on a real mousedown against `.ant-select-selector` —
-    # a JS .click() on the wrapper does nothing here.
-    selector = container.find_element(By.CSS_SELECTOR, ".ant-select-selector")
-    selector.click()
-    time.sleep(1)
-
-    dropdown = ("//div[contains(@class,'ant-select-dropdown') and "
-                "not(contains(@class,'ant-select-dropdown-hidden'))]")
-    if wanted:
-        option = wait.until(EC.presence_of_element_located(
-            (By.XPATH, f"{dropdown}//div[contains(@class,'ant-select-item-option')]"
-                       f"[normalize-space()='{wanted}']")
-        ))
-    else:
-        options = wait.until(lambda d: d.find_elements(
-            By.XPATH, f"{dropdown}//div[contains(@class,'ant-select-item-option')]"
-        ) or False)
-        option = options[0]
-
-    label = option.text.strip()
-    _click(driver, option)
-    time.sleep(1)
-    return label
 
 
 def _portal_names(driver):
@@ -230,7 +192,7 @@ def test_01_login(driver, base_url, config):
     print(f"PASS: Logged in: {title.splitlines()[0]}")
 
 
-def test_02_open_portal_list_and_snapshot_baseline(driver, base_url):
+def test_02_open_portal_list_and_snapshot_baseline(driver, base_url, config):
     """Organization -> client -> portal list, and record what already exists.
 
     Everything captured here is off-limits for the rest of the run.
@@ -252,41 +214,16 @@ def test_02_open_portal_list_and_snapshot_baseline(driver, base_url):
             time.sleep(4)
     # Where 'Organization' lands depends on the account's role. An org-scoped
     # account goes straight to its own client list; an ADMIN / SUPER_ADMIN gets
-    # the organization list first and has to pick one. dev and prod differ here
-    # because there is no EMAIL_ORG_PROD, so a prod run falls back to the admin
-    # account and needs this extra hop.
-    org_cards = driver.find_elements(By.CSS_SELECTOR, ".org-card")
-    if org_cards and not driver.find_elements(By.CSS_SELECTOR, ".client-list-table-container"):
-        wanted = os.getenv("PORTAL_ORG")
-        card = None
-        if wanted:
-            matches = driver.find_elements(
-                By.XPATH,
-                f"//div[contains(@class,'org-card')][.//h6[normalize-space()='{wanted}']]"
-                "//div[contains(@class,'org-card-arrow')]",
-            )
-            if not matches:
-                pytest.fail(
-                    f"PORTAL_ORG='{wanted}' is not on the organization list. "
-                    f"{_dump(driver, 'org_list')}"
-                )
-            card = matches[0]
-        else:
-            card = driver.find_element(By.CSS_SELECTOR, ".org-card .org-card-arrow")
-        _click(driver, card)
-        _wait(driver, 20).until(EC.url_contains("/organization/client"))
-        time.sleep(2)
-
+    # the organization list and searches it for PORTAL_ORG (PORTAL_ORG_PROD on
+    # prod). dev and prod differ here because there is no EMAIL_ORG_PROD, so a
+    # prod run falls back to the admin account and needs this extra hop.
     try:
-        wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, ".client-list-table-container")))
-    except TimeoutException:
+        CONTEXT["org"] = org_flow.open_organization(driver, config["portal_org"])
+    except (AssertionError, TimeoutException) as exc:
         pytest.fail(
-            f"Client list never rendered (at {driver.current_url}). {_dump(driver, 'client_list')}"
+            f"Could not open the client list (at {driver.current_url}): {exc} "
+            f"{_dump(driver, 'client_list')}"
         )
-    time.sleep(3)
-
-    shown_org = driver.find_elements(By.CSS_SELECTOR, ".client-org-name")
-    CONTEXT["org"] = shown_org[0].text.strip() if shown_org else None
 
     # Pick the client named in PORTAL_CLIENT, else the first row.
     target_client = os.getenv("PORTAL_CLIENT")
@@ -342,47 +279,25 @@ def test_03_create_portal(driver, base_url, config):
     time.sleep(3)
 
     # --- Step 1: branding -------------------------------------------------
-    # The organization select only renders for ADMIN/SUPER_ADMIN; org admins get client only.
-    if driver.find_elements(
-        By.XPATH, "//div[contains(@class,'ant-select')][.//span[normalize-space()='Select organization']]"
-    ):
-        org = _pick_antd_option(
-            driver, "Select organization", os.getenv("PORTAL_ORG") or CONTEXT["org"]
-        )
-        print(f"   Organization: {org}")
-        time.sleep(3)
-
-    client = _pick_antd_option(
-        driver, "Select client", os.getenv("PORTAL_CLIENT") or CONTEXT["client"]
-    )
-    print(f"   Client: {client}")
-
-    # Header menu logo is mandatory; react-dropzone's file input is hidden but writable.
-    file_input = wait.until(EC.presence_of_element_located(
-        (By.CSS_SELECTOR, ".dropzone input[type='file']")
-    ))
-    driver.execute_script(
-        "arguments[0].style.display='block';arguments[0].style.opacity=1;", file_input
-    )
-    file_input.send_keys(os.path.abspath(logo_path))
-
-    # The crop modal only yields an image after a real crop interaction -
-    # `onComplete` never fires from the auto-centered initial crop alone.
-    wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, ".crop-image-modal")))
-    handle = wait.until(EC.presence_of_element_located(
-        (By.CSS_SELECTOR, ".ReactCrop__drag-handle.ord-se")
-    ))
-    ActionChains(driver).click_and_hold(handle).move_by_offset(-12, -9).release().perform()
-    time.sleep(2)
-
-    set_btn = wait.until(EC.element_to_be_clickable(
-        (By.XPATH, "//div[contains(@class,'crop-image-modal')]//button[normalize-space()='Set']")
-    ))
-    _click(driver, set_btn)
+    # The organization has to be chosen again here (ADMIN/SUPER_ADMIN only; org
+    # admins get the client select alone), then the client, then the logos -
+    # Material-template orgs also need the registration/login logo.
     try:
-        wait.until(EC.invisibility_of_element_located((By.CSS_SELECTOR, ".crop-image-modal")))
-    except TimeoutException:
-        pytest.fail(f"Crop modal never closed - 'Set' had no cropped image. {_dump(driver, 'crop')}")
+        if org_flow.has_branding_org_select(driver):
+            org = org_flow.pick_branding_option(
+                driver, "Organization", config["portal_org"] or CONTEXT["org"]
+            )
+            print(f"   Organization: {org}")
+            time.sleep(3)
+
+        client = org_flow.pick_branding_option(
+            driver, "Client", os.getenv("PORTAL_CLIENT") or CONTEXT["client"]
+        )
+        print(f"   Client: {client}")
+
+        org_flow.upload_branding_logos(driver, logo_path)
+    except (AssertionError, TimeoutException) as exc:
+        pytest.fail(f"Branding step failed: {exc} {_dump(driver, 'branding')}")
 
     save_branding = wait.until(EC.element_to_be_clickable(
         (By.CSS_SELECTOR, "button[data-testid='branding-next-button']")

@@ -6,9 +6,10 @@ Two independent suites live here:
 
 | File | What it does |
 |------|--------------|
-| `session_test.py` | **Webcast suite** — logs in, opens a portal, then creates/activates/configures webcasts (all 5 types, or one). |
+| `session_test.py` | **Webcast suite** — logs in, opens a portal, then creates/activates/configures webcasts (all 5 types × Kollective / no-Kollective eCDN, or a subset). |
 | `portal_test.py` | **Portal CRUD suite** — create → read → clone → delete a portal, verifying it never touches pre-existing portals. |
 | `cleanup_webcasts.py` | Standalone script — deletes leftover `Automated Webcast *` entries. Not a test. |
+| `setup_target_portal.py` | Standalone script — creates (or reuses) a client + portal in an org via the admin account, and reports whether the org has Kollective enabled. Used to set up `KOLLECTIVE_PORTAL`. |
 
 > ⚠️ These tests drive a **real** application with **real** logins and create **real** data.
 > `--env=prod` hits production. Read [Safety](#10-safety-notes) before your first prod run.
@@ -42,7 +43,7 @@ share one browser via the session-scoped `driver` fixture — so **don't reorder
 | `test_00_cleanup` | Opens its **own short-lived headless browser**, logs in, and deletes every webcast whose name starts with `Automated Webcast`. This makes every run start clean. It uses a separate browser so the main `driver` is still logged-out for `test_01_login`. |
 | `test_01_login` | Logs into the admin URL with the org credentials and asserts the header says `Welcome`. |
 | `test_02_open_target_portal` | Searches for `TARGET_PORTAL` on the dashboard and clicks **Edit** to open it. |
-| `test_03_create_all_webcasts` | The main flow. For each webcast type, runs the full 5-step sequence below. |
+| `test_03_create_all_webcasts` | The main flow. For each webcast type, builds **two** webcasts — eCDN `None` (titles 1–5) and eCDN `Kollective` (titles 6–10) — each running the sequence below. |
 
 ### The per-webcast sequence
 
@@ -52,11 +53,22 @@ For each webcast, `test_03` does:
    date/time/duration → signal → Create.
 2. **Activate + Manage** (`_activate_and_manage_webcast`) — finds the webcast by title,
    flips the Activate toggle, opens its Manage page.
-3. **Set type** (`_set_webcast_type`) — picks the webcast type from the *Webcast details*
+3. **Set eCDN** (`set_ecdn`) — on the *Language & ECDN* tab, picks `None` or `Kollective`
+   from the eCDN dropdown at the top and saves. `Kollective` is only offered when the
+   portal's organization has Kollective enabled; otherwise the test fails listing the
+   options it did see. It then leaves and re-opens the tab to confirm the value persisted.
+   The `None` webcasts are built in `TARGET_PORTAL`; the `Kollective` ones in
+   `KOLLECTIVE_PORTAL`, and a `--ecdn=both` run logs out and back in (admin account)
+   between the two sets. `test_00_cleanup` cleans every portal the run builds in.
+4. **Set type** (`_set_webcast_type`) — picks the webcast type from the *Webcast details*
    dropdown.
-4. **Upload content** (`_upload_content`) — uploads the files that type requires (see below).
-5. **Configure layout** (`_configure_layout_and_go_back`) — sets preview title/description,
-   flips the logo / Q&A / slider-list toggles, saves, and clicks Back.
+5. **Upload content** (`_upload_content`) — uploads the files that type requires (see below).
+6. **Configure layout** (`configure_layout`) — on *Webcast Layout*, turns on **Update Content**
+   (title + description) and **every Webcast Features switch**, filling each one's fields:
+   Logo; Description (tab label + HTML body); Q&A; Downloads (uploads `DOWNLOAD_DOC_PATH`);
+   Slider List; Slido (tab label + `SLIDO_URL`); plus **+ Add Custom Tab** (tab label + HTML).
+   Switches are matched by label and only clicked when off. After Save it re-opens the tab
+   (which re-fetches from the server), asserts everything stuck, then clicks Back.
 
 ### The five webcast types
 
@@ -71,7 +83,7 @@ For each webcast, `test_03` does:
 | `AxS` | Audio & slides | slide (Preview), **headshots** (Preview), audio (Preview), slide (Live) |
 | `V`   | Video only | video (Preview) |
 | `A`   | Audio only | **headshots** (Preview), audio (Preview) |
-| `AxE` | Audio & slides (edge case) | slide, **headshots**, audio, slide (Live) — plus an extra layout toggle |
+| `AxE` | Audio & slides (edge case) | slide, **headshots**, audio, slide (Live) |
 
 This mapping lives in `CONTENT_SPECS` in `session_test.py`. "Preview" / "Live" refers to the
 status dropdown on the Manage page — the suite switches status when the spec calls for it.
@@ -195,11 +207,15 @@ pytest -v -s --env=dev -k "login"
 | `URL_ORG_PROD`, `EMAIL_ORG_PROD`, `PASSWORD_ORG_PROD` | `--env=prod` | Optional prod org overrides; fall back to the `*_PROD` values. |
 | `TARGET_PORTAL` | always | Name of the portal on the dashboard that holds the sessions (e.g. `General Information`). |
 | `TARGET_PORTAL_PROD` | `--env=prod` | Optional prod override; falls back to `TARGET_PORTAL`. |
+| `KOLLECTIVE_PORTAL` | Kollective sessions | Portal the five Kollective webcasts are built in. Its org (`KOLLECTIVE_ORG`) must have Kollective enabled. Reached with `EMAIL`/`PASSWORD` (override with `KOLLECTIVE_EMAIL`/`_PASSWORD`). Unset = `TARGET_PORTAL`. `_PROD` suffix on prod. |
+| `KOLLECTIVE_ORG` / `KOLLECTIVE_CLIENT` | reference | The org and client holding `KOLLECTIVE_PORTAL` (dev: `Automated Kollective Test Org` / `Automated Kollective Client`). Recreate with `python setup_target_portal.py --org ... --client ... --portal ...`. |
 | `DRIVER` | optional | Explicit chromedriver path. Leave unset to let Selenium Manager resolve it. |
 
 ### Webcast titles
 
-`NEW_WEBCAST_TITLE_1` … `_5` name the five webcasts.
+`NEW_WEBCAST_TITLE_1` … `_5` name the five eCDN-`None` webcasts, `_6` … `_10` the five
+`Kollective` ones (same type order). `ECDN_KOLLECTIVE_LABEL` overrides the dropdown label
+(default `Kollective`).
 **Keep the `Automated Webcast` prefix** — `test_00_cleanup` and `cleanup_webcasts.py`
 only delete names starting with that prefix. Rename them and cleanup stops finding them.
 
@@ -208,8 +224,9 @@ only delete names starting with that prefix. Rename them and cleanup stops findi
 `WEBCAST_TYPE_VxS`, `_AxS`, `_V`, `_A`, `_AxE` must match the **exact option labels** in
 the *Webcast details* type dropdown. Valid values:
 `Video & slides (default)`, `Video only`, `Audio & slides`, `Audio only`.
-(There's no separate "AxE" type in the app — `AxE` is a second audio webcast that also
-flips an extra layout toggle.)
+(There's no separate "AxE" type in the app — `AxE` is a second audio webcast. Its old
+"extra layout toggle" was positional switch 1, i.e. *Update Content*, which every webcast
+now turns on.)
 
 ### Asset paths
 
@@ -220,6 +237,8 @@ flips an extra layout toggle.)
 | `HEADSHOT_PATH` | JPG/PNG | Single-image fallback. |
 | `HEADSHOT_PATHS` | comma-separated JPG/PNG list | Multi-headshot upload. Overrides `HEADSHOT_PATH` when set. |
 | `AUDIO_PATH` | M4A | |
+| `DOWNLOAD_DOC_PATH` | PDF/PPT, ≤ 20 MB | Webcast Layout → *Enable Downloads* document. Defaults to `SLIDE_PATH`. |
+| `SLIDO_URL` | URL | Webcast Layout → *Enable Slido* URL. Default `https://app.sli.do/event/automation-test`. |
 
 Use **absolute paths**. Both `C:/forward/slashes` and `C:\back\slashes` work, and paths
 containing spaces are fine with no quoting. In `HEADSHOT_PATHS`, whitespace around each
@@ -279,6 +298,7 @@ headless, uncomment `options.add_argument("--headless=new")` in `session_test.py
 |--------|---------|---------|
 | `--env=dev\|prod` | `dev` | Which credential set loads from `.env`: `*_PROD` keys for prod, plain keys for dev. |
 | `--webcast-type=<KEY>` | *(all five)* | **`session_test.py` only.** Restrict the run to one webcast: `VxS`, `AxS`, `V`, `A`, or `AxE`. No effect on the embedded suite, where a session is always `Video only`. |
+| `--ecdn=both\|kollective\|none` | `both` | **`session_test.py` only.** Which eCDN variant of each webcast to build. Combine with `--webcast-type` to build a single webcast. |
 | `--embed-client=<NAME>` | `Automated Embedded` | **`03_embedded_test.py` only.** The embedded client to use; reused when it already exists, created otherwise. |
 | `--embed-org=<NAME>` | *(first organization)* | **`03_embedded_test.py` only.** Which organization to work in. |
 | `--embed-portal-id=<ID>` | *(discovered)* | **`03_embedded_test.py` only.** Portal whose sessions get embedded, when the created client has none. |
@@ -290,7 +310,7 @@ headless, uncomment `options.add_argument("--headless=new")` in `session_test.py
 | Variable | Meaning |
 |----------|---------|
 | `HEADLESS=1` | Run the portal suite headless. Default is a visible browser. |
-| `PORTAL_CLIENT`, `PORTAL_ORG` | Which client/org to create the portal under. |
+| `PORTAL_CLIENT`, `PORTAL_ORG` / `PORTAL_ORG_PROD` | Which client/org to create the portal under (`PORTAL_ORG` on dev, `PORTAL_ORG_PROD` on prod). |
 | `PORTAL_LOGO_PATH` | Header-menu logo image. Must be **under 200 KB**. Falls back to `HEADSHOT_PATH`. |
 
 ### Standard pytest flags worth knowing

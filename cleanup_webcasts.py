@@ -4,6 +4,7 @@ Only touches summaries whose event name starts with 'Automated Webcast'.
 Discovers and handles the delete-confirmation dialog, logging everything.
 """
 import os
+import sys
 import time
 from dotenv import load_dotenv
 from selenium import webdriver
@@ -11,6 +12,10 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+
+# Printing ⚠️ to a redirected stdout on Windows (cp1252) raises UnicodeEncodeError.
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 PREFIX = "Automated Webcast"
 NAME_XPATH = ".//div[contains(@class,'webcast-summary-event-name')]//div[contains(@class,'webcast-summary-background')]"

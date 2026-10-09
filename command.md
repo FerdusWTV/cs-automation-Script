@@ -120,7 +120,7 @@ python testrail_upload.py language_results.json --name "Language - dev - automat
 | `--testrail-out=<PATH>` | **Custom option**. Writes this run's results for every test carrying a `@pytest.mark.testrail` marker, ready for `testrail_upload.py`. |
 | `--base-url=<URL>` | **Custom option**. Overrides the admin URL for the run (e.g. a locally-running `next dev` at `http://localhost:3000`). Falls back to the `--env` URL when omitted. |
 | `HEADLESS=1` (env var) | Runs `portal_test.py` headless. Default is a visible browser. |
-| `PORTAL_CLIENT` / `PORTAL_ORG` / `PORTAL_LOGO_PATH` (env vars) | Optional `portal_test.py` inputs: which client/org to create the portal under, and the header-menu logo image (must be < 200 KB; falls back to `HEADSHOT_PATH`). |
+| `PORTAL_CLIENT` / `PORTAL_ORG` / `PORTAL_LOGO_PATH` (env vars) | Optional `portal_test.py` inputs: which client/org to create the portal under (`PORTAL_ORG` on dev, `PORTAL_ORG_PROD` on prod; the org is found with the Organizations search bar), and the header-menu logo image (must be < 200 KB; falls back to `HEADSHOT_PATH`). |
 | `--html=report.html` | Writes a **pytest-html** report to `report.html` in the current folder. |
 | `--self-contained-html` | Inlines all CSS/JS/images into that one HTML file so it can be shared/opened anywhere. |
 | `-k "expr"` | Runs only tests whose name matches the expression (e.g. `-k "cleanup"`). |
