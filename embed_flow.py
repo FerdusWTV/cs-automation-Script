@@ -27,6 +27,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
 import locators as L
+import org_flow
 import ui
 
 
@@ -121,6 +122,7 @@ def open_organization(driver, wait, config, org_name):
     browser is still on /organization and gets organizationId=None, which then
     poisons every URL built from it further down.
     """
+    org_flow.check_allowed(org_name)
     open_with_retry(driver, f"{config['url'].rstrip('/')}/organization")
     ui.wait_for_spinner(driver)
     ui.type_text(driver, wait, L.ORG_SEARCH_INPUT, org_name)
@@ -327,6 +329,27 @@ def resolve_portal_org(driver, wait, config, portal_id):
     }
 
 
+def allowed_org_name_for_id(driver, wait, config, organization_id):
+    """The allowlisted organization whose id is `organization_id`.
+
+    A client list opened by id shows no org name (the page takes it from the
+    organizationName query parameter), so on an allowlisted environment each
+    allowed org is opened via the Organizations search and its id compared.
+    Raises when none of them matches - i.e. the portal sits in a foreign org.
+    """
+    for name in org_flow.ALLOWED_ORGS:
+        try:
+            open_organization(driver, wait, config, name)
+            if query_params(driver).get("organizationId") == organization_id:
+                return name
+        except AssertionError:
+            continue  # not on this environment's org list
+    raise AssertionError(
+        f"Organization {organization_id} is not one of the allowed organizations "
+        f"{org_flow.ALLOWED_ORGS} (ALLOWED_ORGS_PROD in .env)."
+    )
+
+
 def open_client_list(driver, wait, config, organization_id, organization_name=None):
     """Open an organization's client list by id, and return its name.
 
@@ -351,11 +374,17 @@ def open_client_list(driver, wait, config, organization_id, organization_name=No
         time.sleep(2)
 
     load(organization_name)
+    # Exact class: 'client-org-name-and-id' (the wrapper holding the org id) also
+    # contains the substring, and comes first.
+    shown = ui.find_all(
+        driver, "//div[contains(concat(' ', normalize-space(@class), ' '), ' client-org-name ')]"
+    )
+    discovered = shown[0].text.strip() if shown else ""
+    # The org owning TARGET_PORTAL is only known by id, so check its name here.
+    org_flow.check_allowed(organization_name or discovered)
     if organization_name:
         return organization_name
 
-    shown = ui.find_all(driver, "//div[contains(@class,'client-org-name')]")
-    discovered = shown[0].text.strip() if shown else ""
     if discovered:
         load(discovered)
     return discovered

@@ -52,6 +52,7 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.support.ui import WebDriverWait
 
 import embed_flow as embed
+import org_flow
 import locators as L
 import ui
 import webcast_flow as flow
@@ -238,7 +239,11 @@ def test_02_resolve_target_organization(driver, wait, config):
         "branding record."
     )
     STATE["org_id"] = owner["organizationId"]
-    STATE["org"] = embed.open_client_list(driver, wait, config, STATE["org_id"])
+    # On prod the owning org must be one of ALLOWED_ORGS_PROD; its name is
+    # resolved from that list because a list opened by id shows no name.
+    org_name = (embed.allowed_org_name_for_id(driver, wait, config, STATE["org_id"])
+                if org_flow.ALLOWED_ORGS else None)
+    STATE["org"] = embed.open_client_list(driver, wait, config, STATE["org_id"], org_name)
     print(f"✅ Target portal {portal_id} belongs to org '{STATE['org']}' ({STATE['org_id']})")
 
 

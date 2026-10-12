@@ -21,8 +21,9 @@ Run:
     ..\\venv\\Scripts\\pytest -v client_test.py --base-url=http://localhost:3000
 
 Optional .env / environment overrides:
-    CLIENT_ORG        organization to open, found via the org search bar (admin
-                      accounts only - an org user stays in its own org; default: first card)
+    CLIENT_ORG        organization to open (CLIENT_ORG_PROD on prod), found via the org
+                      search bar (admin accounts only - an org user stays in its own org).
+                      Dev default: first card. Prod: required, and must be in ALLOWED_ORGS_PROD
     CLIENT_LANGUAGE   language option label   (default: English)
 """
 
@@ -263,7 +264,7 @@ def test_01_login(driver, base_url, config):
     print(f"PASS: Logged in: {title.splitlines()[0]}")
 
 
-def test_02_open_client_list_and_snapshot_baseline(driver, base_url):
+def test_02_open_client_list_and_snapshot_baseline(driver, base_url, config):
     """Organization -> client list, and record which clients already exist.
 
     Everything captured here is off-limits for the rest of the run.
@@ -288,7 +289,7 @@ def test_02_open_client_list_and_snapshot_baseline(driver, base_url):
     # ADMIN/SUPER_ADMIN search the organization list for CLIENT_ORG; an org user
     # is dropped straight onto their own client table (see org_flow).
     try:
-        org_name = org_flow.open_organization(driver, os.getenv("CLIENT_ORG"))
+        org_name = org_flow.open_organization(driver, config["client_org"])
     except (AssertionError, TimeoutException) as exc:
         pytest.fail(
             f"Could not open the client list (at {driver.current_url}): {exc} "

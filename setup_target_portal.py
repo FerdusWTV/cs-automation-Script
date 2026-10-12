@@ -218,6 +218,14 @@ def main():
     url, email, password = (os.getenv(f"URL{sfx}"), os.getenv(f"EMAIL{sfx}"), os.getenv(f"PASSWORD{sfx}"))
     if not all((url, email, password)):
         sys.exit(f"URL{sfx} / EMAIL{sfx} / PASSWORD{sfx} must be set in .env")
+    if args.env == "prod":
+        org_flow.restrict_to((os.getenv("ALLOWED_ORGS_PROD") or "").split(","))
+        if not org_flow.ALLOWED_ORGS:
+            sys.exit("ALLOWED_ORGS_PROD must be set in .env for --env=prod")
+        try:
+            org_flow.check_allowed(args.org)
+        except AssertionError as exc:
+            sys.exit(str(exc))
     logo = os.getenv("PORTAL_LOGO_PATH") or os.getenv("HEADSHOT_PATH")
     if not logo or not os.path.exists(logo) or os.path.getsize(logo) > 200 * 1024:
         sys.exit(f"Need a portal logo image under 200 KB (PORTAL_LOGO_PATH / HEADSHOT_PATH), got {logo!r}")

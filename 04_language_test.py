@@ -34,8 +34,9 @@ Run:
     ..\\venv\\Scripts\\pytest -v 04_language_test.py --testrail-out=language_results.json
 
 Optional .env / environment overrides:
-    LANG_ORG            organization to open, found via the org search bar (admin
-                        accounts only - an org user stays in its own org; default: first card)
+    LANG_ORG            organization to open (LANG_ORG_PROD on prod), found via the org
+                        search bar (admin accounts only - an org user stays in its own org).
+                        Dev default: first card. Prod: required, and must be in ALLOWED_ORGS_PROD
     LANG_DEFAULT        client default language  (default: Italian)
     LANG_ADDITIONAL     comma-separated additional languages (default: English,German)
     LANG_SESSION_URL    full URL of an EXISTING session page. Without it the
@@ -472,7 +473,7 @@ def test_01_login(driver, base_url, config):
     print(f"PASS: Logged in: {title.splitlines()[0]}")
 
 
-def test_02_open_client_list_and_snapshot_baseline(driver):
+def test_02_open_client_list_and_snapshot_baseline(driver, config):
     """Organization -> client list, and record the clients that already exist."""
     wait = _wait(driver)
 
@@ -493,7 +494,7 @@ def test_02_open_client_list_and_snapshot_baseline(driver):
     # Where 'Organization' lands depends on the account's role: an org-scoped
     # account goes straight to its client list, an ADMIN searches the org list.
     try:
-        CONTEXT["org"] = org_flow.open_organization(driver, os.getenv("LANG_ORG"))
+        CONTEXT["org"] = org_flow.open_organization(driver, config["lang_org"])
     except (AssertionError, TimeoutException) as exc:
         pytest.fail(f"Could not open the client list (at {driver.current_url}): {exc} "
                     f"{_dump(driver, 'lang_client_list')}")
@@ -592,7 +593,7 @@ def test_06_portal_default_language_cascades_and_is_read_only(driver):
     # ADMIN / SUPER_ADMIN.
     try:
         if org_flow.has_branding_org_select(driver):
-            org_flow.pick_branding_option(driver, "Organization", os.getenv("LANG_ORG") or CONTEXT["org"])
+            org_flow.pick_branding_option(driver, "Organization", CONTEXT["org"])
             time.sleep(3)
         org_flow.pick_branding_option(driver, "Client", CLIENT_NAME)
     except (AssertionError, TimeoutException) as exc:

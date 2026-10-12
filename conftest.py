@@ -5,6 +5,8 @@ import pytest
 import selenium
 from dotenv import load_dotenv
 
+import org_flow
+
 # The flows print ✅ / ⚠️. On Windows, a redirected or piped stdout defaults to
 # cp1252, which can't encode them and raises UnicodeEncodeError mid-test.
 for _stream in (sys.stdout, sys.stderr):
@@ -171,6 +173,10 @@ def config(request):
         # Organization the portal suite (02) works in: PORTAL_ORG on dev,
         # PORTAL_ORG_PROD on prod. Unset = the account's own / first org.
         "portal_org": env("PORTAL_ORG"),
+        # Organizations the client (01) and language (04) suites open: CLIENT_ORG /
+        # LANG_ORG on dev, CLIENT_ORG_PROD / LANG_ORG_PROD on prod.
+        "client_org": env("CLIENT_ORG"),
+        "lang_org": env("LANG_ORG"),
 
         # Local media used by the content uploads
         "slide_path": os.getenv("SLIDE_PATH"),
@@ -319,6 +325,15 @@ def pytest_configure(config):
 
     if hasattr(config, "_metadata") and config._metadata is not None:
         config._metadata["Selenium Version"] = selenium.__version__
+
+    # Prod holds real customer organizations: every suite may only touch the
+    # ones listed in ALLOWED_ORGS_PROD, and a prod run without that list stops.
+    if config.getoption("--env") == "prod":
+        load_dotenv()
+        allowed = (os.getenv("ALLOWED_ORGS_PROD") or "").split(",")
+        org_flow.restrict_to(allowed)
+        if not org_flow.ALLOWED_ORGS:
+            raise pytest.UsageError("ALLOWED_ORGS_PROD must be set in .env for --env=prod.")
 
 
 # `optionalhook=True` lets these register even when pytest-html isn't installed;

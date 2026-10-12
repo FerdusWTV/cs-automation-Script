@@ -38,6 +38,31 @@ def _click(driver, element):
 
 
 # ==========================================================================
+# Allowed organizations
+# ==========================================================================
+
+# The only organizations a run may work in. Empty = unrestricted (dev). On prod
+# conftest / setup_target_portal fill it from ALLOWED_ORGS_PROD, because prod
+# holds real customer orgs and an unset org used to fall through to whichever
+# card sorted first.
+ALLOWED_ORGS = []
+
+
+def restrict_to(orgs):
+    """Limit every org this module (and embed_flow) opens to `orgs`."""
+    ALLOWED_ORGS[:] = [o.strip() for o in orgs if o and o.strip()]
+
+
+def check_allowed(org_name):
+    """Raise unless `org_name` is on the allowlist (no-op when unrestricted)."""
+    if ALLOWED_ORGS and (org_name or "").strip() not in ALLOWED_ORGS:
+        raise AssertionError(
+            f"Organization '{org_name}' is not allowed on this environment. "
+            f"Allowed: {ALLOWED_ORGS} (ALLOWED_ORGS_PROD in .env)."
+        )
+
+
+# ==========================================================================
 # Organizations list
 # ==========================================================================
 
@@ -48,6 +73,14 @@ def open_organization(driver, org_name=None, timeout=30):
     admin gets the first organization card and an org user its own org.
     Raises AssertionError when the org can't be reached or the wrong one opened.
     """
+    if ALLOWED_ORGS:
+        if not org_name:
+            raise AssertionError(
+                "No organization configured, and this environment never falls back "
+                f"to the first org card. Set one of {ALLOWED_ORGS}."
+            )
+        check_allowed(org_name)
+
     wait = WebDriverWait(driver, timeout)
     wait.until(lambda d: d.find_elements(
         By.CSS_SELECTOR, ".org-card, .client-list-table-container"
@@ -86,6 +119,7 @@ def open_organization(driver, org_name=None, timeout=30):
             if org_user else ""
         )
         raise AssertionError(f"Opened organization '{shown}', expected '{org_name}'.{hint}")
+    check_allowed(shown)
     return shown
 
 
@@ -111,6 +145,11 @@ def pick_branding_option(driver, label, wanted=None, timeout=30):
 
     None takes the first option. Returns the chosen option text.
     """
+    if label == "Organization" and ALLOWED_ORGS:
+        if not wanted:
+            raise AssertionError(f"Organization: no org given; choose one of {ALLOWED_ORGS}.")
+        check_allowed(wanted)
+
     wait = WebDriverWait(driver, timeout)
     select = wait.until(EC.presence_of_element_located((By.XPATH, branding_select(label))))
     driver.execute_script("arguments[0].scrollIntoView({block:'center'});", select)
